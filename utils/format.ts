@@ -9,6 +9,8 @@ export const maskPAN = (pan: string | undefined) => {
   return '**** **** **** ' + pan.slice(-4)
 }
 
+export const formatPAN = maskPAN
+
 export const formatExpiry = (expiryDate: string | undefined) => {
   if (!expiryDate || expiryDate.length < 4) return ''
   return expiryDate.slice(2) + '/' + expiryDate.slice(0, 2)
