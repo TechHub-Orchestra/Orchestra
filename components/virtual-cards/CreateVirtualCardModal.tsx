@@ -16,6 +16,7 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
     merchant: '',
     spendLimit: '',
     autoRenew: true,
+    color: '#0052FF',
   })
 
   if (!open) return null
@@ -94,6 +95,22 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
               required
               className="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#E94560] focus:outline-none"
             />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 mb-2 block">Card Color</label>
+            <div className="flex gap-2">
+              {['#0052FF', '#E94560', '#1A1A2E', '#10B981', '#F59E0B', '#6366F1', '#8B5CF6'].map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => update('color', c)}
+                  className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110
+                    ${form.color === c ? 'border-gray-900 scale-110' : 'border-transparent'}`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
           </div>
 
           <label className="flex items-center gap-3 cursor-pointer">

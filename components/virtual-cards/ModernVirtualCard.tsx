@@ -1,6 +1,8 @@
 'use client'
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toNaira } from '@/utils/format'
+import { Eye, EyeOff, Settings, Pause, Play, Trash2, ArrowLeft } from 'lucide-react'
 
 interface ModernVirtualCardProps {
   card: {
@@ -17,109 +19,156 @@ interface ModernVirtualCardProps {
   }
   isSelected?: boolean
   onClick?: () => void
+  onPause?: (id: string) => void
+  onResume?: (id: string) => void
+  onDelete?: (id: string) => void
 }
 
-export default function ModernVirtualCard({ card, isSelected, onClick }: ModernVirtualCardProps) {
+export default function ModernVirtualCard({ card, isSelected, onClick, onPause, onResume, onDelete }: ModernVirtualCardProps) {
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [reveal, setReveal] = useState(false)
+  
   const isPaused = card.paused
-  const bgColor = card.color || '#0052FF' // Default blue from image
+  const bgColor = card.color || '#0052FF'
+
+  const toggleFlip = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsFlipped(!isFlipped)
+  }
+
+  const toggleReveal = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setReveal(!reveal)
+  }
 
   return (
-    <motion.div
-      whileHover={{ y: -4, scale: 1.01 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`relative w-full aspect-[1.6/1] rounded-3xl overflow-hidden cursor-pointer shadow-xl transition-all duration-300
-        ${isSelected ? 'ring-4 ring-white ring-offset-4 ring-offset-[#1A1A2E]' : ''}
-        ${isPaused ? 'grayscale-[0.8] opacity-70' : ''}`}
-      style={{
-        background: `linear-gradient(135deg, ${bgColor} 0%, ${adjustColor(bgColor, -30)} 100%)`,
-      }}
-    >
-      {/* Grid Pattern Overlay */}
-      <div 
-        className="absolute inset-0 opacity-20 pointer-events-none"
-        style={{
-          backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
-        }}
-      />
+    <div className="relative w-full aspect-[1.6/1] perspective-1000">
+      <motion.div
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+        className="relative w-full h-full preserve-3d"
+      >
+        {/* FRONT SIDE */}
+        <div 
+          className="absolute inset-0 backface-hidden rounded-3xl overflow-hidden shadow-xl"
+          style={{ background: `linear-gradient(135deg, ${bgColor} 0%, ${adjustColor(bgColor, -30)} 100%)` }}
+        >
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
 
-      {/* Content Container */}
-      <div className="relative h-full w-full p-8 flex flex-col justify-between text-white">
-        {/* Top Section */}
-        <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold tracking-[0.2em] opacity-80 uppercase">
-              Virtual Subscription
-            </p>
-            <h3 className="text-2xl font-bold tracking-tight">
-              {card.label || 'New Card'}
-            </h3>
-          </div>
-
-          {/* Orchestra Logo Badge */}
-          <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2">
-            <div className="flex gap-0.5">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="w-1 bg-white rounded-full" style={{ height: `${i * 4 + 4}px` }} />
-              ))}
+          <div className="relative h-full w-full p-8 flex flex-col justify-between text-white">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-bold tracking-[0.2em] opacity-80 uppercase mb-1">Virtual Subscription</p>
+                <h3 className="text-2xl font-bold tracking-tight">{card.label || 'New Card'}</h3>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={toggleReveal} className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all">
+                  {reveal ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+                <button onClick={toggleFlip} className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all">
+                  <Settings size={16} />
+                </button>
+              </div>
             </div>
-            <span className="text-[10px] font-black tracking-widest uppercase">Orchestra</span>
-          </div>
-        </div>
 
-        {/* PAN Section */}
-        <div className="flex gap-6 items-center">
-          <div className="flex gap-2">
-            {[1, 2, 3].map(group => (
-              <div key={group} className="flex gap-1.5">
-                {[1, 2, 3, 4].map(dot => (
-                  <div key={dot} className="w-2 h-2 rounded-full bg-white opacity-90 shadow-sm" />
+            <div className="flex gap-6 items-center">
+              <div className="flex gap-2">
+                {[1, 2, 3].map(group => (
+                  <div key={group} className="flex gap-1.5">
+                    {reveal ? (
+                      <span className="text-2xl font-mono tracking-wider opacity-90">0000</span>
+                    ) : (
+                      <div className="flex gap-1.5 py-2">
+                        {[1, 2, 3, 4].map(dot => <div key={dot} className="w-2 h-2 rounded-full bg-white opacity-90" />)}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
-            ))}
-          </div>
-          <span className="text-2xl font-mono tracking-wider text-white/90">
-            {card.last4 || '1234'}
-          </span>
-        </div>
-
-        {/* Bottom Section */}
-        <div className="flex justify-between items-end">
-          <div className="flex gap-8">
-            <div className="space-y-1">
-              <p className="text-[9px] font-bold tracking-widest opacity-60 uppercase">Expiry</p>
-              <p className="text-sm font-bold font-mono tracking-wider">{card.expiry || '12/28'}</p>
+              <span className="text-2xl font-mono tracking-wider text-white/90">{card.last4 || '1234'}</span>
             </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-bold tracking-widest opacity-60 uppercase">CVV</p>
-              <p className="text-sm font-bold font-mono tracking-wider">***</p>
-            </div>
-          </div>
 
-          {/* Network Logo (Mastercard) */}
-          <div className="relative w-12 h-8 flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-lg p-1 px-2 border border-white/10">
-            <div className="relative flex -space-x-4">
-              <div className="w-6 h-6 rounded-full bg-[#EB001B] opacity-90" />
-              <div className="w-6 h-6 rounded-full bg-[#F79E1B] mix-blend-screen" />
+            <div className="flex justify-between items-end">
+              <div className="flex gap-8">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-bold tracking-widest opacity-60 uppercase">Expiry</p>
+                  <p className="text-sm font-bold font-mono tracking-wider">{card.expiry || '12/28'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-bold tracking-widest opacity-60 uppercase">CVV</p>
+                  <p className="text-sm font-bold font-mono tracking-wider">{reveal ? '123' : '***'}</p>
+                </div>
+              </div>
+              <div className="relative w-12 h-8 flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-lg border border-white/10">
+                <div className="relative flex -space-x-4">
+                  <div className="w-6 h-6 rounded-full bg-[#EB001B] opacity-90" />
+                  <div className="w-6 h-6 rounded-full bg-[#F79E1B] mix-blend-screen" />
+                </div>
+              </div>
             </div>
           </div>
+          {isPaused && (
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+              <div className="bg-white text-black px-6 py-2 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2">
+                <span>PAUSED</span>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Paused Overlay */}
-      {isPaused && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-          <div className="bg-white text-black px-6 py-2 rounded-full text-sm font-bold shadow-2xl flex items-center gap-2">
-            <span>PAUSED</span>
+        {/* BACK SIDE */}
+        <div 
+          className="absolute inset-0 backface-hidden rounded-3xl overflow-hidden shadow-xl rotate-y-180 bg-[#1A1A2E]"
+          style={{ background: `linear-gradient(135deg, #1A1A2E 0%, ${bgColor} 100%)` }}
+        >
+          <div className="relative h-full w-full p-8 flex flex-col justify-between text-white">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-lg">Card Settings</h4>
+              <button onClick={toggleFlip} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all">
+                <ArrowLeft size={16} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 my-4">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                <p className="text-[9px] font-bold tracking-widest opacity-50 uppercase mb-1">Spent</p>
+                <p className="text-lg font-bold">{toNaira(card.amountSpent)}</p>
+              </div>
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                <p className="text-[9px] font-bold tracking-widest opacity-50 uppercase mb-1">Remaining</p>
+                <p className="text-lg font-bold">{toNaira(card.spendLimit - card.amountSpent)}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); isPaused ? onResume?.(card._id) : onPause?.(card._id) }}
+                className="flex-1 flex items-center justify-center gap-2 bg-white text-black py-3 rounded-2xl font-bold transition-all hover:bg-white/90"
+              >
+                {isPaused ? <Play size={18} /> : <Pause size={18} />}
+                {isPaused ? 'Resume' : 'Pause'}
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete?.(card._id) }}
+                className="bg-red-500/20 text-red-100 p-3 rounded-2xl border border-red-500/30 hover:bg-red-500 hover:text-white transition-all"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
         </div>
-      )}
-    </motion.div>
+      </motion.div>
+      <style jsx global>{`
+        .perspective-1000 { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+      `}</style>
+    </div>
   )
 }
 
-// Helper to adjust color for gradient
 function adjustColor(hex: string, percent: number) {
   const num = parseInt(hex.replace('#', ''), 16)
   const amt = Math.round(2.55 * percent)
