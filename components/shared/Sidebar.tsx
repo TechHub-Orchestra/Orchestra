@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   CreditCard,
   Layers,
+  History,
   Briefcase,
   Sparkles,
 } from 'lucide-react'
@@ -12,6 +13,7 @@ import { cn } from '@/utils/cn'
 
 const navItems = [
   { href: '/dashboard',     label: 'Overview',      icon: LayoutDashboard },
+  { href: '/transactions',  label: 'Transactions',  icon: History },
   { href: '/cards',         label: 'My Cards',      icon: CreditCard },
   { href: '/virtual-cards', label: 'Virtual Cards', icon: Layers },
   { href: '/business',      label: 'Business',      icon: Briefcase },

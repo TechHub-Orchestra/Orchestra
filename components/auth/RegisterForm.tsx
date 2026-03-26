@@ -2,47 +2,39 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { useRegister } from '@/hooks/useAuth'
 
 export default function RegisterForm() {
   const router = useRouter()
+  const { mutate: register, isPending: loading } = useRegister()
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setLoading(true)
     setError('')
     const formData = new FormData(e.currentTarget)
 
-    if (formData.get('password') !== formData.get('confirmPassword')) {
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const confirmPassword = formData.get('confirmPassword') as string
+
+    if (password !== confirmPassword) {
       setError('Passwords do not match')
-      setLoading(false)
       return
     }
 
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.get('name'),
-          email: formData.get('email'),
-          password: formData.get('password'),
-        }),
-      })
-
-      if (res.ok) {
+    register({ name, email, password }, {
+      onSuccess: () => {
+        // Clear onboarding flag for new users
+        localStorage.removeItem('orchestra_onboarded')
         toast.success('Account created! Welcome to Orchestra.')
         router.push('/dashboard')
-      } else {
-        const data = await res.json()
-        setError(data.message || 'Registration failed')
-        setLoading(false)
+      },
+      onError: (err: any) => {
+        setError(err.message || 'Registration failed – please retry')
       }
-    } catch {
-      setError('Connection error — please retry')
-      setLoading(false)
-    }
+    })
   }
 
   return (

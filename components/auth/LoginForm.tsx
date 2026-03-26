@@ -2,39 +2,30 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { useLogin } from '@/hooks/useAuth'
 
 export default function LoginForm() {
   const router = useRouter()
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { mutate: login, isPending: loading } = useLogin()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setLoading(true)
     setError('')
     const formData = new FormData(e.currentTarget)
 
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.get('email'),
-          password: formData.get('password'),
-        }),
-      })
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
-      if (res.ok) {
+    login({ email, password }, {
+      onSuccess: () => {
         toast.success('Welcome back!')
         router.push('/dashboard')
-      } else {
-        setError('Invalid email or password')
-        setLoading(false)
+      },
+      onError: (err: any) => {
+        setError(err.message || 'Invalid email or password / Connection error')
       }
-    } catch {
-      setError('Connection error — please retry')
-      setLoading(false)
-    }
+    })
   }
 
   return (

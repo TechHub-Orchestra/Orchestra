@@ -1,6 +1,8 @@
 'use client'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { maskPAN, formatExpiry, toNaira } from '@/utils/format'
+import { Eye, EyeOff, Settings, ShieldAlert, Trash2, ArrowLeft, Lock, Unlock } from 'lucide-react'
 
 interface Card {
   _id: string
@@ -13,6 +15,8 @@ interface Card {
   availableBalance?: number
   color?: string
   bank?: string
+  cvv?: string
+  isUltimate?: boolean
 }
 
 interface CardWidgetProps {
@@ -20,6 +24,10 @@ interface CardWidgetProps {
   balance?: number
   isSelected?: boolean
   onClick?: () => void
+  onBlock?: (id: string) => void
+  onUnblock?: (id: string) => void
+  onDelete?: (id: string) => void
+  isDraggable?: boolean
 }
 
 const NETWORK_LOGOS: Record<string, string> = {
@@ -28,74 +36,202 @@ const NETWORK_LOGOS: Record<string, string> = {
   MASTERCARD: '◉◎',
 }
 
-export default function CardWidget({ card, balance, isSelected, onClick }: CardWidgetProps) {
+export default function CardWidget({ card, balance, isSelected, onClick, onBlock, onUnblock, onDelete, isDraggable }: CardWidgetProps) {
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [reveal, setReveal] = useState(false)
+  
   const isBlocked = card.cardStatus === '2'
+  const bgColor = card.isUltimate 
+    ? 'linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #1A1A2E 100%)'
+    : (card.color || 'linear-gradient(135deg, #1A1A2E 0%, #16213E 100%)')
+
+  const toggleFlip = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsFlipped(!isFlipped)
+  }
+
+  const toggleReveal = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setReveal(!reveal)
+  }
 
   return (
-    <motion.div
-      whileHover={{ scale: isSelected ? 1.0 : 1.03 }}
-      whileTap={{ scale: 0.98 }}
-      animate={{ rotateY: isSelected ? 3 : 0 }}
-      transition={{ duration: 0.3 }}
-      onClick={onClick}
-      className={`relative rounded-2xl p-6 cursor-pointer transition-all duration-300 select-none
-        ${isSelected ? 'ring-4 ring-white ring-offset-2 shadow-2xl' : ''}
-        ${isBlocked ? 'opacity-60 grayscale' : ''}`}
-      style={{
-        background: card.color || 'linear-gradient(135deg, #1A1A2E 0%, #16213E 100%)',
-        minHeight: '200px',
-        minWidth: '300px',
-        maxWidth: '360px',
-      }}
-    >
-      {/* Network */}
-      <div className="absolute top-4 right-4 text-white font-bold text-sm opacity-80">
-        {card.cardProgram ? (NETWORK_LOGOS[card.cardProgram] ?? card.cardProgram) : 'VERVE'}
-      </div>
+    <div className={`relative min-w-[340px] max-w-[440px] w-full aspect-[1.58/1] perspective-1000 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}>
+      <motion.div
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+        className="relative w-full h-full cursor-pointer"
+        style={{ transformStyle: 'preserve-3d' }}
+        onClick={onClick}
+      >
+        {/* FRONT SIDE */}
+        <div 
+          className={`absolute inset-0 rounded-[24px] p-8 shadow-2xl flex flex-col justify-between overflow-hidden
+            ${card.isUltimate ? 'ring-2 ring-blue-500/50' : ''}`}
+          style={{ 
+            background: bgColor,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            zIndex: isFlipped ? 0 : 1
+          }}
+        >
+          {/* Circuit Pattern for Ultimate Card */}
+          {card.isUltimate && (
+            <div className="absolute inset-0 opacity-40 pointer-events-none overflow-hidden">
+              <svg width="100%" height="100%" viewBox="0 0 400 250">
+                <path d="M0 100 H100 L150 50 H250 L300 100 H400" stroke="#4F46E5" fill="none" strokeWidth="1" />
+                <path d="M0 150 H120 L170 200 H280 L330 150 H400" stroke="#4F46E5" fill="none" strokeWidth="1" />
+                <path d="M50 0 V60 L90 100" stroke="#4F46E5" fill="none" strokeWidth="1" />
+                <circle cx="150" cy="50" r="3" fill="#60A5FA" />
+                <circle cx="300" cy="100" r="3" fill="#60A5FA" />
+                <circle cx="170" cy="200" r="3" fill="#60A5FA" />
+                <circle cx="120" cy="150" r="3" fill="#60A5FA" />
+              </svg>
+            </div>
+          )}
 
-      {/* Bank label */}
-      {card.bank && (
-        <div className="absolute top-4 left-6">
-          <p className="text-white/50 text-xs font-medium tracking-wider">{card.bank}</p>
+          {/* Network & Icons */}
+          <div className="flex justify-between items-start z-10">
+            <div className="space-y-1">
+              {card.isUltimate ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full border-2 border-white/50 flex items-center justify-center p-1">
+                    <div className="w-full h-full border border-white/30 rounded-full" />
+                  </div>
+                  <span className="text-white font-bold tracking-tight">Orchestra</span>
+                </div>
+              ) : (
+                <>
+                  {card.bank && <p className="text-white/50 text-[10px] uppercase tracking-widest leading-none mb-1">{card.bank}</p>}
+                  <div className="text-white font-bold text-sm opacity-80 uppercase leading-none">
+                    {card.cardProgram ? (NETWORK_LOGOS[card.cardProgram] ?? card.cardProgram) : 'VERVE'}
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="flex gap-2">
+              {card.isUltimate && <span className="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-1 mr-2">Ultimate Card</span>}
+              <button 
+                onClick={toggleReveal} 
+                className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all text-white/80"
+              >
+                {reveal ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+              <button 
+                onClick={toggleFlip} 
+                className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all text-white/80"
+              >
+                <Settings size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Chip and PAN */}
+          <div className="z-10">
+            {!card.isUltimate && <div className="w-12 h-8 bg-yellow-400/60 rounded-md mb-6 flex-shrink-0" />}
+            <p className={`text-white font-mono tracking-[0.2em] ${card.isUltimate ? 'text-3xl mt-12' : 'text-xl'}`}>
+              {reveal ? (card.pan || (card.isUltimate ? '4000 1234 5678 9010' : '0000 0000 0000 0000')) : (maskPAN(card.pan) ?? '**** **** **** ****')}
+            </p>
+          </div>
+
+          {/* Footer Info */}
+          <div className="flex justify-between items-end z-10">
+            <div className="space-y-1">
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.15em]">Card Holder</p>
+              <p className="text-white font-semibold text-base truncate max-w-[200px] uppercase">
+                {card.isUltimate ? 'Orchestra Master' : (card.nameOnCard || card.label || 'YOUR NAME')}
+              </p>
+            </div>
+            <div className="text-right space-y-1">
+              <p className="text-white/40 text-[10px] uppercase tracking-[0.15em]">Expires</p>
+              <p className="text-white font-semibold text-base">{formatExpiry(card.expiryDate) || (card.isUltimate ? '12/99' : '••/••')}</p>
+            </div>
+          </div>
+
+          {/* Balance Overlay */}
+          {balance !== undefined && !isFlipped && (
+            <div className="absolute top-32 right-8 text-right">
+              <p className="text-white/30 text-[10px] uppercase tracking-wider">Available</p>
+              <p className="text-white font-bold text-xl">{toNaira(balance)}</p>
+            </div>
+          )}
+
+          {/* Status Badge */}
+          {isBlocked && (
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-20">
+              <span className="bg-red-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-2">
+                <ShieldAlert size={14} /> {card.isUltimate ? 'DISABLED' : 'BLOCKED'}
+              </span>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Chip */}
-      <div className="w-10 h-7 bg-yellow-400/70 rounded-md mt-8 mb-5" />
+        {/* BACK SIDE */}
+        <div 
+          className="absolute inset-0 rounded-[24px] p-8 shadow-2xl flex flex-col justify-between"
+          style={{ 
+            background: '#1A1A2E',
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)',
+            zIndex: isFlipped ? 1 : 0
+          }}
+        >
+          {/* Back Header */}
+          <div className="flex justify-between items-center text-white">
+            <h4 className="font-bold text-sm">{card.isUltimate ? 'Orchestra Control' : 'Security & Control'}</h4>
+            <button onClick={toggleFlip} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/70">
+              <ArrowLeft size={18} />
+            </button>
+          </div>
 
-      {/* PAN */}
-      <p className="text-white font-mono text-base tracking-[0.2em] mb-5">
-        {maskPAN(card.pan) ?? 'VIRT-XXXX'}
-      </p>
+          {/* Magnetic Stripe Effect */}
+          <div className="absolute top-12 left-0 w-full h-10 bg-black/80" />
 
-      {/* Name + Expiry */}
-      <div className="flex justify-between items-end">
-        <div>
-          <p className="text-white/50 text-[10px] mb-0.5 uppercase tracking-widest">Card Holder</p>
-          <p className="text-white font-semibold text-sm">{card.nameOnCard || card.label || 'YOUR NAME'}</p>
+          {/* CVV & Stats */}
+          <div className="mt-12 space-y-4">
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">CVV / CVC</p>
+                  <p className="text-white font-mono font-bold text-xl select-all">{card.cvv || (card.isUltimate ? '888' : '123')}</p>
+                </div>
+                <div className="h-8 w-12 bg-gray-200/10 rounded border border-white/5" />
+              </div>
+            </div>
+
+            <div className="flex gap-2 items-center text-white/50 text-[10px] px-2 italic">
+              <Lock size={10} /> Do not share your card details with anyone.
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 mt-auto">
+            <button
+              onClick={(e) => { e.stopPropagation(); isBlocked ? onUnblock?.(card._id) : onBlock?.(card._id) }}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all
+                ${isBlocked 
+                  ? 'bg-green-600/20 text-green-400 border border-green-600/30 hover:bg-green-600 hover:text-white' 
+                  : (card.isUltimate ? 'bg-red-600/20 text-red-200 border border-red-600/30 hover:bg-red-600 hover:text-white' : 'bg-amber-600/20 text-amber-100 border border-amber-600/30 hover:bg-amber-600 hover:text-white')}`}
+            >
+              {isBlocked ? <Unlock size={14} /> : <Lock size={14} />}
+              {card.isUltimate ? (isBlocked ? 'Enable Card' : 'Disable Card') : (isBlocked ? 'Unlock Card' : 'Block Card')}
+            </button>
+            {!card.isUltimate && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete?.(card._id) }}
+                className="px-4 py-3 rounded-xl bg-red-600/10 text-red-500 border border-red-600/20 hover:bg-red-600 hover:text-white transition-all"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-white/50 text-[10px] mb-0.5 uppercase tracking-widest">Expires</p>
-          <p className="text-white font-semibold text-sm">{formatExpiry(card.expiryDate) || '••/••'}</p>
-        </div>
-      </div>
-
-      {/* Balance overlay */}
-      {balance !== undefined && (
-        <div className="absolute bottom-4 right-4 text-right">
-          <p className="text-white/50 text-[10px]">Available</p>
-          <p className="text-white font-bold text-sm">{toNaira(balance)}</p>
-        </div>
-      )}
-
-      {/* Blocked badge */}
-      {isBlocked && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="bg-red-600 text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg">
-            BLOCKED
-          </span>
-        </div>
-      )}
-    </motion.div>
+      </motion.div>
+      <style jsx global>{`
+        .perspective-1000 { perspective: 1000px; }
+      `}</style>
+    </div>
   )
 }
