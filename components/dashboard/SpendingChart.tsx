@@ -40,7 +40,7 @@ export default function SpendingChart() {
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
           <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
           <YAxis tickFormatter={v => `₦${(v / 100000).toFixed(0)}k`} tick={{ fontSize: 12, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-          <Tooltip formatter={(v: number) => [toNaira(v), 'Spent']} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }} />
+          <Tooltip formatter={(v: any) => [toNaira(v), 'Spent']} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }} />
           <Bar dataKey="amount" fill="#E94560" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
