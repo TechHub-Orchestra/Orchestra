@@ -12,7 +12,7 @@ export const handleApiError = (error: any): string => {
       case 403:
         return 'Forbidden: You do not have permission.';
       case 404:
-        return tdata?.message || 'Resource not found.';
+        return data?.message || 'Resource not found.';
       case 500:
         return 'Internal Server Error: Please try again later.';
       default:

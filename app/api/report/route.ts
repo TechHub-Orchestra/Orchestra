@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { verifyAuth } from '@/lib/auth-utils'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ success: false }, { status: 401 })
+
+  const transactions = db.get('transactions').filter(t => t.userId === user._id)
+  
   return NextResponse.json({
+    success: true,
     report: {
-      transactions: [
-        { date: new Date().toISOString(), merchant: 'Shoprite', category: 'shopping', amount: 1520000, reference: 'TX-12345', flagged: false },
-        { date: new Date().toISOString(), merchant: 'Netflix', category: 'subscriptions', amount: 370000, reference: 'TX-67890', flagged: false },
-        { date: new Date().toISOString(), merchant: 'Uber Nigeria', category: 'transport', amount: 450000, reference: 'TX-11223', flagged: true },
-        { date: new Date().toISOString(), merchant: 'Interswitch Store', category: 'shopping', amount: 12500000, reference: 'TX-44556', flagged: false },
-      ]
+      transactions: transactions.map(t => ({
+        date: t.transactionDate,
+        merchant: t.merchant,
+        category: t.category,
+        amount: t.amount,
+        reference: t._id,
+        flagged: t.isAnomaly
+      }))
     }
   })
 }

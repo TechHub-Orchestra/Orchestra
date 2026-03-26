@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { verifyAuth } from '@/lib/auth-utils'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ success: false }, { status: 401 })
+
+  const anomalies = db.get('anomalies').filter(a => a.userId === user._id)
+
   return NextResponse.json({
-    anomalies: [
-      {
-        merchant: 'Unauthorised Store Inc',
-        anomalyReason: 'Large transaction for new merchant',
-        severity: 'high'
-      },
-      {
-        merchant: 'Apple Services',
-        anomalyReason: 'Duplicate transaction within 30 seconds',
-        severity: 'medium'
-      }
-    ]
+    success: true,
+    anomalies
   })
 }

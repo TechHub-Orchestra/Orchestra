@@ -1,0 +1,105 @@
+{
+  "users": [
+    {
+      "_id": "4lfag7f87",
+      "name": "Test User",
+      "email": "test_1774555788612@example.com",
+      "password": "cGFzc3dvcmQxMjM=",
+      "role": "business",
+      "businessName": "Test Corp",
+      "createdAt": "2026-03-26T20:10:32.734Z",
+      "updatedAt": "2026-03-26T20:10:32.734Z"
+    },
+    {
+      "_id": "3vgc0j6p4",
+      "name": "Test User",
+      "email": "test_1774556151608@example.com",
+      "password": "cGFzc3dvcmQxMjM=",
+      "role": "business",
+      "businessName": "Test Corp",
+      "createdAt": "2026-03-26T20:15:53.492Z",
+      "updatedAt": "2026-03-26T20:15:53.492Z"
+    }
+  ],
+  "cards": [
+    {
+      "label": "Salary Card",
+      "bank": "TestBank",
+      "cardProgram": "VISA",
+      "pan": "123456******7890",
+      "availableBalance": 49850000,
+      "_id": "0saf9ro58",
+      "userId": "4lfag7f87",
+      "cardStatus": "1",
+      "createdAt": "2026-03-26T20:10:34.844Z"
+    },
+    {
+      "label": "Salary Card",
+      "bank": "TestBank",
+      "cardProgram": "VISA",
+      "pan": "123456******7890",
+      "availableBalance": 49850000,
+      "_id": "9egviuumn",
+      "userId": "3vgc0j6p4",
+      "cardStatus": "1",
+      "createdAt": "2026-03-26T20:15:53.544Z"
+    }
+  ],
+  "virtualCards": [
+    {
+      "label": "Netflix Sub",
+      "spendLimit": 1000000,
+      "parentCardId": "0saf9ro58",
+      "_id": "vw2waepalp",
+      "userId": "4lfag7f87",
+      "amountSpent": 0,
+      "paused": false,
+      "pan": "424242******2871",
+      "expiryDate": "12/28",
+      "createdAt": "2026-03-26T20:10:40.243Z"
+    },
+    {
+      "label": "Netflix Sub",
+      "spendLimit": 1000000,
+      "parentCardId": "9egviuumn",
+      "_id": "v97prqlo9g",
+      "userId": "3vgc0j6p4",
+      "amountSpent": 0,
+      "paused": true,
+      "pan": "424242******7860",
+      "expiryDate": "12/28",
+      "createdAt": "2026-03-26T20:15:53.618Z"
+    }
+  ],
+  "businessCards": [],
+  "transactions": [
+    {
+      "_id": "l4moz0nsa",
+      "userId": "4lfag7f87",
+      "cardId": "0saf9ro58",
+      "pan": "123456******7890",
+      "amount": 150000,
+      "currency": "NGN",
+      "merchant": "Starlink",
+      "category": "utilities",
+      "transactionDate": "2026-03-26T20:10:38.157Z",
+      "isAnomaly": false
+    },
+    {
+      "_id": "b01f4c16q",
+      "userId": "3vgc0j6p4",
+      "cardId": "9egviuumn",
+      "pan": "123456******7890",
+      "amount": 150000,
+      "currency": "NGN",
+      "merchant": "Starlink",
+      "category": "utilities",
+      "transactionDate": "2026-03-26T20:15:53.580Z",
+      "isAnomaly": false
+    }
+  ],
+  "routingRules": [],
+  "anomalies": [],
+  "insights": [],
+  "expenseRequests": []
+}

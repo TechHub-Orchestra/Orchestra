@@ -1,39 +1,37 @@
 import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { verifyAuth } from '@/lib/auth-utils'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ success: false }, { status: 401 })
+
+  const vCards = db.get('virtualCards')
+  const userVCards = vCards.filter(c => c.userId === user._id)
+
   return NextResponse.json({
-    cards: [
-      {
-        _id: 'v1',
-        label: 'Netflix Sub',
-        merchant: 'Netflix',
-        amountSpent: 750000,
-        spendLimit: 1000000,
-        paused: false,
-        autoRenew: true
-      },
-      {
-        _id: 'v2',
-        label: 'Spotify Sub',
-        merchant: 'Spotify',
-        amountSpent: 280000,
-        spendLimit: 300000,
-        paused: false,
-        autoRenew: true
-      },
-      {
-        _id: 'v3',
-        label: 'Generic Online',
-        amountSpent: 120000,
-        spendLimit: 500000,
-        paused: true,
-        autoRenew: false
-      }
-    ]
+    success: true,
+    cards: userVCards
   })
 }
 
 export async function POST(req: Request) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ success: false }, { status: 401 })
+
   const body = await req.json()
-  return NextResponse.json({ success: true, card: { ...body, _id: 'v' + Math.random().toString(36).substr(2, 9), amountSpent: 0, paused: false } })
+  const newVCard = {
+    ...body,
+    _id: 'v' + Math.random().toString(36).substr(2, 9),
+    userId: user._id,
+    amountSpent: 0,
+    paused: false,
+    pan: '424242******' + Math.floor(1000 + Math.random() * 9000),
+    expiryDate: '12/28',
+    createdAt: new Date().toISOString()
+  }
+
+  db.update('virtualCards', (cards) => [...cards, newVCard])
+
+  return NextResponse.json({ success: true, card: newVCard })
 }

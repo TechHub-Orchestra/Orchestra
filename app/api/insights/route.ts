@@ -1,28 +1,41 @@
 import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { verifyAuth } from '@/lib/auth-utils'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ success: false }, { status: 401 })
+
+  const transactions = db.get('transactions').filter(t => t.userId === user._id)
+  
+  const byCategory: Record<string, number> = {}
+  let totalSpent = 0
+
+  transactions.forEach(t => {
+    const cat = t.category || 'misc'
+    byCategory[cat] = (byCategory[cat] || 0) + (t.amount || 0)
+    totalSpent += (t.amount || 0)
+  })
+
+  // Basic insights generation
+  const insights = [
+     `You spent ₦${(totalSpent/100).toLocaleString()} across ${transactions.length} transactions.`,
+     transactions.filter(t => t.isAnomaly).length > 0 ? `${transactions.filter(t => t.isAnomaly).length} anomalous transactions detected.` : "No unusual activity detected this period."
+  ]
+
+  const recommendations = [
+    "Consider setting spend limits on your top categories.",
+    "Review your virtual card recurring subscriptions."
+  ]
+
   return NextResponse.json({
+    success: true,
     insights: {
-      summary: "You've total spent ₦425,000 across all categories this month. Food and Shopping are your highest categories.",
-      insights: [
-        "Your weekly food spend increased by 15%",
-        "Netflix subscription is on an inactive virtual card",
-        "Multiple small transactions at Shoprite flagged"
-      ],
-      recommendations: [
-        "Reduce Food spending by ₦20,000",
-        "Move GTBank balance to Access Bank for higher interest",
-        "Deactivate GTBank card to avoid maintenance fees"
-      ],
-      savingsOpportunity: 45000,
-      byCategory: {
-        food: 12000000,
-        transport: 4500000,
-        shopping: 18000000,
-        subscriptions: 3500000,
-        utilities: 2000000,
-        entertainment: 2500000
-      }
+      summary: `You've spent ₦${(totalSpent/100).toLocaleString()} overall.`,
+      insights,
+      recommendations,
+      savingsOpportunity: Math.floor(totalSpent * 0.05 / 100),
+      byCategory
     }
   })
 }

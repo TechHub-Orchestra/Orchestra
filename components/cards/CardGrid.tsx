@@ -71,7 +71,7 @@ interface CardGridProps {
 
 export default function CardGrid({ cards, onRefresh }: CardGridProps) {
   // Split localCards into ultimate and physical
-  const ultimateCardData = useMemo(() => {
+  const ultimateCardData: Card = useMemo(() => {
     return {
       _id: 'ultimate_card_001',
       label: 'Orchestra Ultimate',
