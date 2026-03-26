@@ -1,60 +1,99 @@
 import Card from '../db/models/Card.js'
 import CardBalance from '../db/models/CardBalance.js'
-import { fetchBalance } from '../services/card360.js'
+import { card360 } from '../services/card360.js'
 
-// GET /api/cards
 export async function getCards(req, res) {
   const cards = await Card.find({ userId: req.user._id })
-  res.json({ cards })
+
+  const withBalances = await Promise.all(cards.map(async (card) => {
+    const bal = await card360.getBalance(card.pan, card.cardType)
+    return {
+      ...card.toObject(),
+      availableBalance: bal.availableBalance ?? 0,
+      ledgerBalance:    bal.ledgerBalance ?? 0,
+      currency:         bal.currency ?? 'NGN',
+    }
+  }))
+
+  res.json({ cards: withBalances })
 }
 
-// POST /api/cards
 export async function addCard(req, res) {
-  const card = await Card.create({ ...req.body, userId: req.user._id })
+  const { pan, expiryDate, issuerNr, cardSequenceNr,
+          label, bank, color, cardType } = req.body
+
+  // Verify card exists on Card360 (or mock)
+  const c360 = await card360.fetchCard({ pan, expiryDate, issuerNr, cardSequenceNr })
+  if (c360.code !== '00') {
+    return res.status(400).json({ error: 'Card not found or invalid details' })
+  }
+
+  const detail = c360.cardDetails[0]
+  const card   = await Card.create({
+    ...detail,
+    userId:   req.user._id,
+    label,
+    bank,
+    color,
+    cardType: cardType || 'debit',
+  })
+
   res.status(201).json({ card })
 }
 
-// GET /api/cards/:id
 export async function getCard(req, res) {
   const card = await Card.findOne({ _id: req.params.id, userId: req.user._id })
   if (!card) return res.status(404).json({ error: 'Card not found' })
   res.json({ card })
 }
 
-// PATCH /api/cards/:id
 export async function updateCard(req, res) {
-  const card = await Card.findOneAndUpdate(
-    { _id: req.params.id, userId: req.user._id },
-    req.body,
-    { new: true, runValidators: true }
-  )
+  const { action } = req.body   // 'block' | 'unblock'
+
+  const card = await Card.findOne({ _id: req.params.id, userId: req.user._id })
   if (!card) return res.status(404).json({ error: 'Card not found' })
-  res.json({ card })
+
+  // If no action provided, act like a standard update
+  if (!action) {
+    const updated = await Card.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      req.body,
+      { new: true, runValidators: true }
+    )
+    return res.json({ card: updated })
+  }
+
+  const result = action === 'block'
+    ? await card360.blockCard(card.pan, card.cardType)
+    : await card360.unblockCard(card.pan, card.cardType)
+
+  if (result.code === '00') {
+    card.cardStatus = action === 'block' ? '2' : '1'
+    await card.save()
+  }
+
+  res.json({ card, ...result })
 }
 
-// DELETE /api/cards/:id
 export async function deleteCard(req, res) {
   const card = await Card.findOneAndDelete({ _id: req.params.id, userId: req.user._id })
   if (!card) return res.status(404).json({ error: 'Card not found' })
   res.json({ message: 'Card removed' })
 }
 
-// GET /api/cards/:id/balance
 export async function getCardBalance(req, res) {
   const card = await Card.findOne({ _id: req.params.id, userId: req.user._id })
   if (!card) return res.status(404).json({ error: 'Card not found' })
 
-  // Fetch from Card360 (returns mock if CARD360_ENABLED=false)
-  const data = await fetchBalance(card.pan)
+  const data = await card360.getBalance(card.pan, card.cardType)
   
-  // Save balance snapshot
   const balance = await CardBalance.create({
     pan: card.pan,
     availableBalance: data.availableBalance,
     ledgerBalance: data.ledgerBalance,
     currency: data.currency,
-    responseCode: data.responseCode,
-    responseDescription: data.responseDescription,
+    responseCode: data.code,
+    responseDescription: data.description,
     cardId: card._id,
   })
 
