@@ -71,7 +71,10 @@ export default function CardPriorityList({ cards, onReorder }: CardPriorityListP
     if (over && active.id !== over.id) {
       const oldIndex = cards.findIndex(c => c._id === active.id)
       const newIndex = cards.findIndex(c => c._id === over.id)
-      onReorder(arrayMove(cards, oldIndex, newIndex))
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        onReorder(arrayMove(cards, oldIndex, newIndex))
+      }
     }
   }
 

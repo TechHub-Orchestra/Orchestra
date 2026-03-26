@@ -44,7 +44,7 @@ export default function SpendingBreakdown({ byCategory }: SpendingBreakdownProps
             ))}
           </Pie>
           <Tooltip
-            formatter={(v: number) => [toNaira(v), 'Spent']}
+            formatter={(v: any) => [toNaira(v), 'Spent']}
             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
           />
           <Legend formatter={(v) => <span className="text-xs">{v}</span>} />
