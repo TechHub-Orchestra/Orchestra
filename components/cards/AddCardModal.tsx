@@ -13,11 +13,11 @@ interface AddCardModalProps {
 const BANKS = ['GTBank', 'Access Bank', 'UBA', 'First Bank', 'Zenith Bank', 'Stanbic IBTC', 'Polaris Bank']
 const PROGRAMS = ['VERVE', 'VISA', 'MASTERCARD']
 const CARD_COLORS = [
-  'linear-gradient(135deg, #1A1A2E 0%, #16213E 100%)',
-  'linear-gradient(135deg, #E94560 0%, #c73652 100%)',
-  'linear-gradient(135deg, #0f3460 0%, #16213E 100%)',
-  'linear-gradient(135deg, #533483 0%, #2d1b69 100%)',
-  'linear-gradient(135deg, #1B4332 0%, #081C15 100%)',
+  '#1A1A2E',
+  '#E94560',
+  '#0f3460',
+  '#533483',
+  '#1B4332',
 ]
 
 export default function AddCardModal({ open, onClose, onAdded }: AddCardModalProps) {
