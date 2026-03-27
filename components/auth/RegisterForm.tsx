@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useRegister } from '@/hooks/useAuth'
+import { extractErrorMessage } from '@/lib/utils'
 
 export default function RegisterForm() {
   const router = useRouter()
@@ -34,7 +35,7 @@ export default function RegisterForm() {
         router.push('/dashboard')
       },
       onError: (err: any) => {
-        setError(err.message || 'Registration failed – please retry')
+        setError(extractErrorMessage(err))
       }
     })
   }

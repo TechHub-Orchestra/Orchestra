@@ -188,8 +188,8 @@ export default function TransactionTable({ onExport }: { onExport?: (txs: Transa
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <p className={cn('font-bold text-sm', t.amount >= 0 ? 'text-green-600' : 'text-[#1A1A2E]')}>
-                          {t.amount >= 0 ? '+' : ''}{toNaira(Math.abs(t.amount))}
+                        <p className={cn('font-bold text-sm', t.amount >= 0 ? 'text-green-600' : 'text-red-600')}>
+                          {t.amount >= 0 ? '+' : '-'}{toNaira(Math.abs(t.amount))}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-center">

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { toNaira } from '@/utils/format'
 import { fetchWithAuth } from '@/lib/fetch-utils'
+import CardWidget from '@/components/cards/CardWidget'
 
 interface SummaryData {
   total: number
@@ -44,33 +45,17 @@ export default function BalanceSummary() {
         </div>
       </div>
       
-      <div className="bg-[#1A1A2E] rounded-2xl p-6 text-white relative overflow-hidden ring-1 ring-blue-500/30">
-        {/* Ultimate Card Visual Style */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1A1A2E] via-[#16213E] to-[#1A1A2E] opacity-100" />
-        <div className="absolute inset-0 opacity-40 pointer-events-none overflow-hidden">
-          <svg width="100%" height="100%" viewBox="0 0 200 150">
-            <path d="M0 60 H50 L80 30 H150 L180 60 H200" stroke="#4F46E5" fill="none" strokeWidth="1" />
-            <path d="M0 90 H60 L90 120 H160 L190 90 H200" stroke="#4F46E5" fill="none" strokeWidth="1" />
-            <circle cx="80" cy="30" r="2" fill="#60A5FA" />
-            <circle cx="150" cy="30" r="2" fill="#60A5FA" />
-          </svg>
-        </div>
-        
-        <div className="relative z-10 h-full flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-5 h-5 rounded-full border-2 border-white/30 flex items-center justify-center p-0.5">
-                <div className="w-full h-full border border-white/20 rounded-full" />
-              </div>
-              <span className="text-white font-bold text-xs tracking-tight">Orchestra Ultimate</span>
-            </div>
-            <p className="text-white/80 text-xs font-medium">Programmable Routing</p>
-          </div>
-          <div className="mt-4">
-            <p className="text-xl font-bold">Active Engine</p>
-            <p className="text-white/60 text-[10px] uppercase tracking-widest mt-1">Multi-Bank Unified</p>
-          </div>
-        </div>
+      <div className="flex flex-col h-full">
+        <CardWidget 
+          card={{
+            _id: 'ultimate_summary',
+            cardStatus: '1',
+            isUltimate: true,
+            label: 'Orchestra Ultimate'
+          }}
+          hideBalance={true}
+          hideActions={true}
+        />
       </div>
     </div>
   )

@@ -28,6 +28,8 @@ interface CardWidgetProps {
   onUnblock?: (id: string) => void
   onDelete?: (id: string) => void
   isDraggable?: boolean
+  hideBalance?: boolean
+  hideActions?: boolean
 }
 
 const NETWORK_LOGOS: Record<string, string> = {
@@ -36,7 +38,18 @@ const NETWORK_LOGOS: Record<string, string> = {
   MASTERCARD: '◉◎',
 }
 
-export default function CardWidget({ card, balance, isSelected, onClick, onBlock, onUnblock, onDelete, isDraggable }: CardWidgetProps) {
+export default function CardWidget({ 
+  card, 
+  balance, 
+  isSelected, 
+  onClick, 
+  onBlock, 
+  onUnblock, 
+  onDelete, 
+  isDraggable,
+  hideBalance = false,
+  hideActions = false
+}: CardWidgetProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [reveal, setReveal] = useState(false)
   
@@ -47,20 +60,22 @@ export default function CardWidget({ card, balance, isSelected, onClick, onBlock
 
   const toggleFlip = (e: React.MouseEvent) => {
     e.stopPropagation()
+    if (hideActions) return
     setIsFlipped(!isFlipped)
   }
 
   const toggleReveal = (e: React.MouseEvent) => {
     e.stopPropagation()
+    if (hideActions) return
     setReveal(!reveal)
   }
 
   return (
-    <div className={`relative min-w-[340px] max-w-[440px] w-full aspect-[1.58/1] perspective-1000 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}>
+    <div className={`relative ${hideActions ? 'min-w-0' : 'min-w-[340px] max-w-[440px]'} w-full aspect-[1.58/1] perspective-1000 ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}>
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
-        className="relative w-full h-full cursor-pointer"
+        className={`relative w-full h-full ${hideActions ? 'cursor-default' : 'cursor-pointer'}`}
         style={{ transformStyle: 'preserve-3d' }}
         onClick={onClick}
       >
@@ -110,21 +125,23 @@ export default function CardWidget({ card, balance, isSelected, onClick, onBlock
               )}
             </div>
             
-            <div className="flex gap-2">
-              {card.isUltimate && <span className="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-1 mr-2">Ultimate Card</span>}
-              <button 
-                onClick={toggleReveal} 
-                className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all text-white/80"
-              >
-                {reveal ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-              <button 
-                onClick={toggleFlip} 
-                className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all text-white/80"
-              >
-                <Settings size={18} />
-              </button>
-            </div>
+            {!hideActions && (
+              <div className="flex gap-2">
+                {card.isUltimate && <span className="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-1 mr-2">Ultimate Card</span>}
+                <button 
+                  onClick={toggleReveal} 
+                  className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all text-white/80"
+                >
+                  {reveal ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+                <button 
+                  onClick={toggleFlip} 
+                  className="p-2 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full transition-all text-white/80"
+                >
+                  <Settings size={18} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Chip and PAN */}
@@ -150,7 +167,7 @@ export default function CardWidget({ card, balance, isSelected, onClick, onBlock
           </div>
 
           {/* Balance Overlay */}
-          {balance !== undefined && !isFlipped && (
+          {balance !== undefined && !isFlipped && !hideBalance && (
             <div className="absolute top-32 right-8 text-right">
               <p className="text-white/30 text-[10px] uppercase tracking-wider">Available</p>
               <p className="text-white font-bold text-xl">{toNaira(balance)}</p>

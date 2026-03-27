@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { fetchWithAuth } from '@/lib/fetch-utils'
+import { extractErrorMessage } from '@/lib/utils'
 import CardWidget from './CardWidget'
 import CardActions from './CardActions'
 import EmptyState from '@/components/shared/EmptyState'
@@ -121,10 +122,11 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
         handleStatusChange(id, '2')
         toast.success('Card blocked')
       } else {
-        toast.error('Failed to block card')
+        const data = await res.json()
+        toast.error(extractErrorMessage({ data }))
       }
-    } catch {
-      toast.error('An error occurred')
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
     }
   }
 
@@ -139,10 +141,11 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
         handleStatusChange(id, '1')
         toast.success('Card unblocked')
       } else {
-        toast.error('Failed to unblock card')
+        const data = await res.json()
+        toast.error(extractErrorMessage({ data }))
       }
-    } catch {
-      toast.error('An error occurred')
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
     }
   }
 
@@ -157,10 +160,11 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
         if (selectedId === id) setSelectedId(ultimateCardData._id)
         toast.success('Card removed')
       } else {
-        toast.error('Failed to remove card')
+        const data = await res.json()
+        toast.error(extractErrorMessage({ data }))
       }
-    } catch {
-      toast.error('An error occurred')
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
     }
   }
 

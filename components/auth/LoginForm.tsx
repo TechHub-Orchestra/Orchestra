@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useLogin } from '@/hooks/useAuth'
+import { extractErrorMessage } from '@/lib/utils'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -23,7 +24,7 @@ export default function LoginForm() {
         router.push('/dashboard')
       },
       onError: (err: any) => {
-        setError(err.message || 'Invalid email or password / Connection error')
+        setError(extractErrorMessage(err))
       }
     })
   }

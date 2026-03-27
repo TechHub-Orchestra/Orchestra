@@ -165,7 +165,7 @@ export default function DashboardPage() {
                     <p className="font-medium text-sm text-[#1A1A2E] truncate">{tx.merchant}</p>
                     <p className="text-xs text-gray-400 capitalize">{tx.category} · {timeAgo(tx.date)}</p>
                   </div>
-                  <p className={`font-semibold text-sm shrink-0 ${tx.amount >= 0 ? 'text-green-600' : 'text-[#1A1A2E]'}`}>
+                  <p className={`font-semibold text-sm shrink-0 ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatTxAmount(tx.amount)}
                   </p>
                 </div>

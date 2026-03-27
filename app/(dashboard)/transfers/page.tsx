@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Send, Search, Building2, User, ArrowRight, ShieldCheck } from 'lucide-react'
 import { fetchWithAuth } from '@/lib/fetch-utils'
 import { toNaira } from '@/utils/format'
+import { extractErrorMessage } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
@@ -65,10 +66,10 @@ export default function TransfersPage() {
         router.push('/transactions')
       } else {
         const data = await res.json()
-        toast.error(data.message || 'Transfer failed')
+        toast.error(extractErrorMessage({ data }))
       }
-    } catch {
-      toast.error('Network error')
+    } catch (err) {
+      toast.error(extractErrorMessage(err))
     } finally {
       setSubloading(false)
     }
