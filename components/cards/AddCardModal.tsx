@@ -52,12 +52,18 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, color: selectedColor }),
       })
-      if (!res.ok) throw new Error()
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Failed to add card')
+      }
+
       toast.success('Card added successfully!')
       onAdded()
       onClose()
-    } catch {
-      toast.error('Failed to add card')
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to add card')
     } finally {
       setLoading(false)
     }
