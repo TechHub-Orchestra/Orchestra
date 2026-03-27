@@ -69,24 +69,30 @@ export async function addCard(req, res) {
   // Explicitly map only known Card360 fields — never spread detail directly
   // to avoid unknown fields silently overwriting our schema.
   const detail = c360.cardDetails[0]
-  const card   = await Card.create({
-    pan:         detail.pan,
-    expiryDate:  detail.expiryDate,
-    issuerNr:    detail.issuerNr,
-    firstName:   detail.firstName,
-    lastName:    detail.lastName,
-    nameOnCard:  detail.nameOnCard,
-    cardProgram: detail.cardProgram,
-    customerId:  detail.customerId,
-    cardStatus:  detail.cardStatus,
-    seqNr:       detail.seqNr,
-    userId:      req.user._id,
-    label,
-    bank,
-    accountNumber,
-    color,
-    cardType:    cardType || 'debit',
-  })
+  let card
+  try {
+    card = await Card.create({
+      pan:         detail.pan,
+      expiryDate:  detail.expiryDate,
+      issuerNr:    detail.issuerNr,
+      firstName:   detail.firstName,
+      lastName:    detail.lastName,
+      nameOnCard:  detail.nameOnCard,
+      cardProgram: detail.cardProgram,
+      customerId:  detail.customerId,
+      cardStatus:  detail.cardStatus,
+      seqNr:       detail.seqNr,
+      userId:      req.user._id,
+      label,
+      bank,
+      accountNumber,
+      color,
+      cardType:    cardType || 'debit',
+    })
+  } catch (err) {
+    console.error('CRITICAL: Card failed to save:', err)
+    return res.status(500).json({ error: 'Failed to save card. It might already be linked to an account.' })
+  }
 
   const cardObj = card.toObject()
   res.status(201).json({ card: { ...cardObj, pan: maskPan(cardObj.pan) } })

@@ -33,12 +33,11 @@ export async function handleChat(req, res) {
     Currency is Naira (NGN).
   `
 
-  // 3. Retrieve or initialize chat history atomically
-  let chat = await Chat.findOneAndUpdate(
-    { userId: req.user._id },
-    { $setOnInsert: { userId: req.user._id, messages: [] } },
-    { upsert: true, new: true }
-  )
+  // 3. Retrieve or initialize chat history
+  let chat = await Chat.findOne({ userId: req.user._id })
+  if (!chat) {
+    chat = await Chat.create({ userId: req.user._id, messages: [] })
+  }
 
   // 4. Build message payload (System Context + History + New Message)
   const messages = [
@@ -62,7 +61,12 @@ export async function handleChat(req, res) {
   
   // Keep history manageable
   if (chat.messages.length > 50) chat.messages = chat.messages.slice(-50)
-  await chat.save()
+  
+  try {
+    await chat.save()
+  } catch (err) {
+    console.error('CRITICAL: Chat history failed to save:', err)
+  }
 
   res.json({ reply: assistantMessage, history: chat.messages })
 }

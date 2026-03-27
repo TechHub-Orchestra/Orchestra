@@ -7,8 +7,9 @@ import { handleChat, getChatHistory, clearChat } from '../controllers/chat.contr
 const router = Router()
 router.use(protect)
 
-router.get('/',      getChatHistory)
-router.post('/',     validate(chatSchema), handleChat)
+router.get('/',        getChatHistory)
+router.get('/history', getChatHistory)
+router.post('/',       validate(chatSchema), handleChat)
 router.delete('/',   clearChat)
 
 export default router

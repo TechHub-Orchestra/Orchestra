@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 const cardSchema = new mongoose.Schema({
   // Card360 fields — exact names from fetchSingle response
-  pan:          { type: String, required: true },
+  pan:          { type: String, required: true, unique: true },
   expiryDate:   { type: String, required: true },   // YYMM e.g. '2612'
   issuerNr:     { type: String, required: true },
   firstName:    String,
