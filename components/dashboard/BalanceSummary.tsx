@@ -48,8 +48,8 @@ export default function BalanceSummary() {
   if (loading) return <BalanceSummarySkeleton />
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div className="bg-[#1A1A2E] rounded-3xl p-8 text-white col-span-1 md:col-span-2 relative overflow-hidden flex flex-col justify-between min-h-[240px]">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="bg-[#1A1A2E] rounded-3xl p-8 text-white lg:col-span-2 relative overflow-hidden flex flex-col justify-between min-h-[240px] md:min-h-[280px]">
         {/* Background circuit pattern */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" viewBox="0 0 400 200">
@@ -63,12 +63,12 @@ export default function BalanceSummary() {
         <div className="relative z-10 flex justify-between items-start">
           <div>
             <p className="text-white/60 text-sm font-medium mb-1">Total Balance Across All Cards</p>
-            <p className="text-5xl font-black tracking-tight">{toNaira(data?.total ?? 0)}</p>
+            <p className="text-4xl md:text-5xl font-black tracking-tight">{toNaira(data?.total ?? 0)}</p>
             <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">
               {data?.active ?? 0} Active / {data?.cardCount ?? 0} Total Cards
             </p>
           </div>
-          <Link href="/cards" className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all group">
+          <Link href="/cards" className="w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all group shrink-0">
             <Plus size={24} className="text-white group-hover:rotate-90 transition-transform duration-300" />
           </Link>
         </div>
@@ -78,8 +78,8 @@ export default function BalanceSummary() {
         </div>
       </div>
       
-      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col h-full min-h-[240px]">
-        <div className="p-6 border-b flex items-center justify-between bg-gray-50/50">
+      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col h-[280px] lg:h-auto">
+        <div className="p-5 border-b flex items-center justify-between bg-gray-50/50">
           <h3 className="font-bold text-[#1A1A2E] text-sm flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             Connected Accounts
@@ -98,11 +98,11 @@ export default function BalanceSummary() {
             data.cards.map((card: any) => (
               <div key={card._id} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-transparent hover:border-gray-200 transition-all group">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white border flex items-center justify-center text-[10px] font-black text-gray-400 shadow-sm">
+                  <div className="w-9 h-9 rounded-xl bg-white border flex items-center justify-center text-[9px] font-black text-gray-400 shadow-sm shrink-0">
                     {card.bank?.slice(0, 3).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-[#1A1A2E]">{card.bank}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#1A1A2E] truncate">{card.bank}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className="text-[10px] font-mono text-gray-500">{card.accountNumber || '0123456789'}</span>
                       <button 
@@ -114,7 +114,7 @@ export default function BalanceSummary() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0 ml-2">
                   <p className="text-xs font-black text-[#E94560]">{toNaira(card.availableBalance)}</p>
                   <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Live</p>
                 </div>
@@ -156,9 +156,9 @@ export default function BalanceSummary() {
 
 function BalanceSummarySkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 animate-pulse">
-      <div className="bg-gray-200 rounded-2xl h-32 col-span-2" />
-      <div className="bg-gray-200 rounded-2xl h-32" />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-pulse">
+      <div className="bg-gray-200 rounded-3xl h-[240px] md:h-[280px] lg:col-span-2" />
+      <div className="bg-gray-200 rounded-3xl h-[240px] md:h-[280px]" />
     </div>
   )
 }

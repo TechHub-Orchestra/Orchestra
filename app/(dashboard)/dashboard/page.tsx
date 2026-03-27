@@ -103,42 +103,42 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto px-4 md:px-0 pb-10">
       {showOnboarding && (
         <OnboardingFlow onComplete={() => setShowOnboarding(false)} />
       )}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1A1A2E]">Welcome {user?.name || 'User'} 👋</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-[#1A1A2E]">Welcome {user?.name || 'User'} 👋</h1>
         <p className="text-gray-500 text-sm mt-1">Here's your financial overview for today</p>
       </div>
 
       <BalanceSummary />
 
       {/* Action Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
         <Link href="/transfers" className="bg-white border-2 border-gray-50 hover:border-[#E94560]/20 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Send size={24} />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Send size={20} className="md:w-6 md:h-6" />
           </div>
-          <span className="text-sm font-bold text-[#1A1A2E]">Send Money</span>
+          <span className="text-xs md:text-sm font-bold text-[#1A1A2E]">Send Money</span>
         </Link>
         <Link href="/bills" className="bg-white border-2 border-gray-50 hover:border-[#E94560]/20 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Zap size={24} />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Zap size={20} className="md:w-6 md:h-6" />
           </div>
-          <span className="text-sm font-bold text-[#1A1A2E]">Pay Bills</span>
+          <span className="text-xs md:text-sm font-bold text-[#1A1A2E]">Pay Bills</span>
         </Link>
         <Link href="/transactions" className="bg-white border-2 border-gray-50 hover:border-[#E94560]/20 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <ArrowUpRight size={24} />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <ArrowUpRight size={20} className="md:w-6 md:h-6" />
           </div>
-          <span className="text-sm font-bold text-[#1A1A2E]">History</span>
+          <span className="text-xs md:text-sm font-bold text-[#1A1A2E]">History</span>
         </Link>
         <Link href="/chat" className="bg-[#1A1A2E] p-4 rounded-2xl flex flex-col items-center gap-2 transition-all hover:scale-[1.02] group">
-          <div className="w-12 h-12 rounded-xl bg-[#E94560] text-white flex items-center justify-center shadow-lg shadow-[#E94560]/20">
-            <span className="text-xl">✦</span>
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#E94560] text-white flex items-center justify-center shadow-lg shadow-[#E94560]/20">
+            <span className="text-lg md:text-xl">✦</span>
           </div>
-          <span className="text-sm font-bold text-white">AI Advisor</span>
+          <span className="text-xs md:text-sm font-bold text-white">AI Advisor</span>
         </Link>
       </div>
 
@@ -147,7 +147,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SpendingChart />
 
-        <div className="bg-white rounded-2xl border p-6">
+        <div className="bg-white rounded-2xl border p-5 md:p-6">
           <h3 className="font-bold text-[#1A1A2E] mb-4">Recent Transactions</h3>
           {txLoading ? (
             <div className="space-y-3 animate-pulse">
@@ -173,9 +173,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-[#1A1A2E] truncate">{tx.merchant}</p>
-                    <p className="text-xs text-gray-400 capitalize">{tx.category} · {timeAgo(tx.date)}</p>
+                    <p className="text-[10px] md:text-xs text-gray-400 capitalize truncate">{tx.category} · {timeAgo(tx.transactionDate || tx.date)}</p>
                   </div>
-                  <p className={`font-semibold text-sm shrink-0 ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <p className={`font-semibold text-xs md:text-sm shrink-0 ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatTxAmount(tx.amount)}
                   </p>
                 </div>
