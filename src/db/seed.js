@@ -37,6 +37,14 @@ await Promise.all([
   BillPayment.deleteMany({}),
   Insight.deleteMany({}),
 ])
+
+try {
+  await CardBalance.collection.dropIndex('fetchedAt_1')
+  console.log('🛑  Dropped legacy TTL index on CardBalance')
+} catch (err) {
+  // Ignored if it doesn't exist
+}
+
 console.log('🗑  Cleared existing data')
 
 // ── Users ────────────────────────────────────────────────────────────────────

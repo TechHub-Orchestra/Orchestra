@@ -22,15 +22,19 @@ export async function getCards(req, res) {
     } : await card360.getBalance(card.pan, card.cardType).then(async (res) => {
       // Save for next time if it was a successful live fetch
       if (res.availableBalance !== undefined) {
-        await CardBalance.create({
-          pan: card.pan,
-          cardId: card._id,
-          availableBalance: res.availableBalance,
-          ledgerBalance: res.ledgerBalance,
-          currency: res.currency || 'NGN',
-          responseCode: res.code || '00',
-          responseDescription: res.description || 'Successful'
-        })
+        await CardBalance.findOneAndUpdate(
+          { pan: card.pan },
+          {
+            cardId: card._id,
+            availableBalance: res.availableBalance,
+            ledgerBalance: res.ledgerBalance,
+            currency: res.currency || 'NGN',
+            responseCode: res.code || '00',
+            responseDescription: res.description || 'Successful',
+            fetchedAt: new Date()
+          },
+          { upsert: true }
+        )
       }
       return res
     })
@@ -147,15 +151,19 @@ export async function getCardBalance(req, res) {
 
   // Cache miss — call Card360 and persist the result
   const data    = await card360.getBalance(card.pan, card.cardType)
-  const balance = await CardBalance.create({
-    pan:                 card.pan,
-    cardId:              card._id,
-    availableBalance:    data.availableBalance,
-    ledgerBalance:       data.ledgerBalance,
-    currency:            data.currency   || 'NGN',
-    responseCode:        data.code       || '00',
-    responseDescription: data.description || 'Successful',
-  })
+  const balance = await CardBalance.findOneAndUpdate(
+    { pan: card.pan },
+    {
+      cardId:              card._id,
+      availableBalance:    data.availableBalance,
+      ledgerBalance:       data.ledgerBalance,
+      currency:            data.currency   || 'NGN',
+      responseCode:        data.code       || '00',
+      responseDescription: data.description || 'Successful',
+      fetchedAt:           new Date()
+    },
+    { upsert: true, new: true }
+  )
 
   const balObj = balance.toObject()
   res.json({ balance: { ...balObj, pan: maskPan(balObj.pan) }, fromCache: false })
