@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { toNaira } from '@/utils/format'
 import { fetchWithAuth } from '@/lib/fetch-utils'
 import CardWidget from '@/components/cards/CardWidget'
+import { useCurrentUser } from '@/hooks/useAuth'
 
 interface SummaryData {
   total: number
@@ -11,6 +12,7 @@ interface SummaryData {
 }
 
 export default function BalanceSummary() {
+  const { data: user } = useCurrentUser()
   const [data, setData] = useState<SummaryData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -45,17 +47,21 @@ export default function BalanceSummary() {
         </div>
       </div>
       
-      <div className="flex flex-col h-full">
-        <CardWidget 
-          card={{
-            _id: 'ultimate_summary',
-            cardStatus: '1',
-            isUltimate: true,
-            label: 'Orchestra Ultimate'
-          }}
-          hideBalance={true}
-          hideActions={true}
-        />
+      <div className="flex flex-col md:col-span-1">
+        <div className="h-full flex flex-col justify-center">
+          <CardWidget 
+            card={{
+              _id: 'ultimate_summary',
+              cardStatus: '1',
+              isUltimate: true,
+              label: 'Orchestra Ultimate',
+              nameOnCard: user?.name || 'ORCHESTRA USER'
+            }}
+            hideBalance={true}
+            hideActions={true}
+            showRevealOnly={true}
+          />
+        </div>
       </div>
     </div>
   )

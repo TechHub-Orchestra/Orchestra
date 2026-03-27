@@ -62,17 +62,27 @@ export default function ChatPage() {
         body: JSON.stringify({ message: input }),
       })
 
+      const data = await res.json()
+
       if (res.ok) {
-        const data = await res.json()
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: data.response,
-          timestamp: new Date().toISOString()
-        }])
+        // Handle various response formats (data.response, data.data.response, data.message)
+        const aiResponse = data.response || data.data?.response || data.message || data.text
+        
+        if (aiResponse) {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: aiResponse,
+            timestamp: new Date().toISOString()
+          }])
+        } else {
+          // If no response field, try to fetch history to sync
+          await fetchHistory()
+        }
       } else {
-        toast.error('Failed to get response')
+        toast.error(data.message || 'Failed to get response')
       }
-    } catch {
+    } catch (err) {
+      console.error('Chat error:', err)
       toast.error('Network error')
     } finally {
       setLoading(false)
