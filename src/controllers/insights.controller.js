@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import Groq from 'groq-sdk'
 import Insight from '../db/models/Insight.js'
 import { getSpendingSummary } from '../services/insights.js'
 
@@ -32,14 +32,14 @@ export async function getInsights(req, res) {
     - financialScore: number between 0-100 representing overall financial health
   `
 
-  const openai   = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  const response = await openai.chat.completions.create({
-    model:           'gpt-4o-mini',
+  const groq     = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  const response = await groq.chat.completions.create({
+    model:           'llama-3.1-70b-versatile',
     messages:        [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
   })
 
-  const result  = JSON.parse(response.choices[0].message.content)
+  const result = JSON.parse(response.choices[0].message.content)
   const insight = await Insight.create({
     userId:     req.user._id,
     ...result,

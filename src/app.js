@@ -20,6 +20,7 @@ import anomaliesRoutes    from './routes/anomalies.routes.js'
 import reportRoutes       from './routes/report.routes.js'
 import transfersRoutes    from './routes/transfers.routes.js'
 import billsRoutes        from './routes/bills.routes.js'
+import chatRoutes         from './routes/chat.routes.js'
 import rateLimit from 'express-rate-limit'
 import { errorHandler }   from './middleware/error.middleware.js'
 
@@ -76,6 +77,7 @@ app.use('/api/anomalies',     anomaliesRoutes)
 app.use('/api/report',        reportRoutes)
 app.use('/api/transfers',     transfersRoutes)
 app.use('/api/bills',         billsRoutes)
+app.use('/api/chat',          chatRoutes)
 
 // 404 handler
 app.use((req, res) => {

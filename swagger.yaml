@@ -972,3 +972,56 @@ paths:
       responses:
         '200':
           description: Top-up successful
+
+  # ── Financial Chatbot ────────────────────────────────────────────────────────
+  /api/chat:
+    get:
+      summary: Get user's conversation history with the AI advisor
+      tags: [Chatbot]
+      responses:
+        '200':
+          description: List of previous messages (Role vs Content)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        role: { type: string, enum: [user, assistant] }
+                        content: { type: string }
+                        sentAt: { type: string, format: date-time }
+    post:
+      summary: Send a message to the AI Financial Advisor (Powered by Groq)
+      description: |
+        Automatically injects the user's 30-day spending summary and category breakdown
+        into the AI's context so it can answer specific questions about their finances.
+      tags: [Chatbot]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message: { type: string, example: "Can I afford to buy a new phone next week?" }
+      responses:
+        '200':
+          description: AI reply and updated history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reply: { type: string }
+                  history: { type: array, items: { type: object } }
+    delete:
+      summary: Clear entire chat history for the user
+      tags: [Chatbot]
+      responses:
+        '200':
+          description: Chat history deleted
