@@ -1,19 +1,49 @@
 'use client'
 import Sidebar from '@/components/shared/Sidebar'
 import Navbar from '@/components/shared/Navbar'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { tokenStorage } from '@/utils/tokenStorage'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    const token = tokenStorage.getToken()
-    if (!token) {
-      router.push('/login')
+    const check = () => {
+      const token = tokenStorage.getToken()
+      if (!token) {
+        router.replace('/login')
+      } else {
+        setAuthChecked(true)
+      }
     }
+
+    check()
+
+    // Re-check when storage changes (e.g. logout in another tab, or 401 handler clears token)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'orchestra_token' && !e.newValue) {
+        router.replace('/login')
+      }
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
   }, [router])
+
+  // Don't render dashboard at all until we've confirmed auth
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen bg-gray-50 items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#E94560] flex items-center justify-center animate-pulse">
+            <span className="text-white font-bold">O</span>
+          </div>
+          <p className="text-gray-400 text-sm">Loading…</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">

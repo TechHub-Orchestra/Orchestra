@@ -20,9 +20,8 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
   if (res.status === 401) {
     tokenStorage.clearToken();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
+    // Don't force-navigate here — let the dashboard layout guard redirect properly
+    // so Next.js can use router.push() without a hard page reload
   }
 
   return res;

@@ -27,9 +27,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       tokenStorage.clearToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
+      // Don't hard-redirect — let the dashboard layout guard handle it
     }
     return Promise.reject(error);
   }
