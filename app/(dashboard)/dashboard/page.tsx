@@ -7,6 +7,7 @@ import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { fetchWithAuth } from '@/lib/fetch-utils'
 import { ArrowUpRight, ArrowDownLeft, Send, Zap } from 'lucide-react'
 import Link from 'next/link'
+import { useCurrentUser } from '@/hooks/useAuth'
 
 interface Transaction {
   _id: string
@@ -17,6 +18,7 @@ interface Transaction {
 }
 
 export default function DashboardPage() {
+  const { data: user } = useCurrentUser()
   const [stats, setStats] = useState({
     totalCards: 0,
     virtualCards: 0,
@@ -96,7 +98,7 @@ export default function DashboardPage() {
         <OnboardingFlow onComplete={() => setShowOnboarding(false)} />
       )}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1A1A2E]">Good morning 👋</h1>
+        <h1 className="text-2xl font-bold text-[#1A1A2E]">Welcome {user?.name || 'User'} 👋</h1>
         <p className="text-gray-500 text-sm mt-1">Here's your financial overview for today</p>
       </div>
 

@@ -102,24 +102,34 @@ export default function InsightsPage() {
         <div className="py-16"><LoadingSpinner /></div>
       ) : (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div>
+          {/* Top Row: Health Score + AI Insights */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div className="lg:col-span-4 h-full">
               <FinancialHealthScore />
             </div>
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-8 h-full">
               <AIInsightsPanel />
-            </div>
-            <div className="bg-white rounded-2xl border p-5 h-fit">
-              <h3 className="font-bold text-gray-400 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                Live Anomaly Feed
-              </h3>
-              <AnomalyFeed />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SpendingBreakdown byCategory={byCategory} />
-            <SavingsCalculator byCategory={byCategory} />
+          {/* Bottom Row: Anomaly Feed + Spending Breakdown + Savings Calculator */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="bg-white rounded-2xl border p-5 h-full flex flex-col">
+              <h3 className="font-bold text-gray-400 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+                Live Anomaly Feed
+              </h3>
+              <div className="flex-1">
+                <AnomalyFeed />
+              </div>
+            </div>
+            
+            <div className="h-full">
+              <SpendingBreakdown byCategory={byCategory} />
+            </div>
+
+            <div className="md:col-span-2 xl:col-span-1 h-full">
+              <SavingsCalculator byCategory={byCategory} />
+            </div>
           </div>
         </div>
       )}
