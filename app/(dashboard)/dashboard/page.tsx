@@ -14,7 +14,8 @@ interface Transaction {
   merchant: string
   category: string
   amount: number
-  date: string
+  date?: string
+  transactionDate?: string
 }
 
 export default function DashboardPage() {
@@ -53,7 +54,10 @@ export default function DashboardPage() {
           const currentYear = now.getFullYear();
 
           monthlySpend = transactions.reduce((acc: number, tx: any) => {
-            const txDate = new Date(tx.date);
+            const dateStr = tx.transactionDate || tx.date;
+            if (!dateStr) return acc;
+
+            const txDate = new Date(dateStr);
             // Check if transaction is a debit and from the current month
             if (tx.amount < 0 && txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
               return acc + Math.abs(tx.amount);
@@ -89,7 +93,8 @@ export default function DashboardPage() {
     return `${sign}₦${abs.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
   }
 
-  function timeAgo(dateStr: string) {
+  function timeAgo(dateStr?: string) {
+    if (!dateStr) return 'Recently'
     const diff = Date.now() - new Date(dateStr).getTime()
     const h = Math.floor(diff / 3600000)
     if (h < 24) return `${h}h ago`
