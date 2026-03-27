@@ -14,9 +14,10 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   });
 
   if (res.status === 401) {
-    // Optional: handle unauthorized globally (e.g. redirect to login)
-    // tokenStorage.clearToken();
-    // if (typeof window !== 'undefined') window.location.href = '/login';
+    tokenStorage.clearToken();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
   }
 
   return res;

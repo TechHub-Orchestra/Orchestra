@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface Insights {
   summary: string
@@ -13,7 +14,7 @@ export default function AIInsightsPanel() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/insights')
+    fetchWithAuth('/api/insights')
       .then(r => r.json())
       .then(d => { setData(d.insights); setLoading(false) })
       .catch(() => setLoading(false))

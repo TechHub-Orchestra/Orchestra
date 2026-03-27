@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toNaira } from '@/utils/format'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface SimulationStep {
   step: number
@@ -40,7 +41,7 @@ export default function TransactionSimulator() {
     setStep(0)
 
     try {
-      const res = await fetch('/api/routing/simulate', {
+      const res = await fetchWithAuth('/api/routing/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -8,8 +8,10 @@ import {
   History,
   Briefcase,
   Sparkles,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { useLogout } from '@/hooks/useAuth'
 
 const navItems = [
   { href: '/dashboard',     label: 'Overview',      icon: LayoutDashboard },
@@ -22,6 +24,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const logout = useLogout()
 
   return (
     <>
@@ -61,7 +64,14 @@ export default function Sidebar() {
         </nav>
 
         {/* Bottom user hint */}
-        <div className="px-4 py-5 border-t border-white/10">
+        <div className="px-4 py-5 border-t border-white/10 space-y-3">
+          <button
+            onClick={logout}
+            className="flex items-center gap-3 px-3 py-2 w-full rounded-xl text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
           <div className="bg-white/5 rounded-xl p-3">
             <p className="text-white/40 text-xs">Hackathon Demo</p>
             <p className="text-white/70 text-xs mt-0.5">Interswitch × Enyata 2025</p>

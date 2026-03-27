@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { toNaira } from '@/utils/format'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface Anomaly {
   merchant: string
@@ -15,7 +16,7 @@ export default function AnomalyFeed() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/anomalies')
+    fetchWithAuth('/api/anomalies')
       .then(r => r.json())
       .then(d => { setAnomalies(d.anomalies || []); setLoading(false) })
       .catch(() => setLoading(false))

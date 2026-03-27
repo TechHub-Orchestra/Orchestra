@@ -7,6 +7,7 @@ import AnomalyFeed from '@/components/insights/AnomalyFeed'
 import RecommendationCard from '@/components/insights/RecommendationCard'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import toast from 'react-hot-toast'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface InsightsData {
   insights: {
@@ -19,7 +20,7 @@ export default function InsightsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/insights')
+    fetchWithAuth('/api/insights')
       .then(r => r.json())
       .then((d: InsightsData) => {
         setByCategory(d.insights?.byCategory || {})
@@ -30,7 +31,7 @@ export default function InsightsPage() {
 
   async function downloadReport() {
     try {
-      const res = await fetch('/api/report?days=30')
+      const res = await fetchWithAuth('/api/report?days=30')
       const { report } = await res.json()
       const rows = [
         ['Date', 'Merchant', 'Category', 'Amount (NGN)', 'Reference', 'Flagged'],

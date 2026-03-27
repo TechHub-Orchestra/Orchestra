@@ -6,6 +6,7 @@ import EmptyState from '@/components/shared/EmptyState'
 import toast from 'react-hot-toast'
 import { Plus, Briefcase } from 'lucide-react'
 import { toNaira } from '@/utils/format'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface BusinessCard {
   _id: string
@@ -35,8 +36,8 @@ export default function BusinessPage() {
     setLoading(true)
     try {
       const [cardsRes, reqRes] = await Promise.all([
-        fetch('/api/business/cards').then(r => r.json()),
-        fetch('/api/business/approvals').then(r => r.json()),
+        fetchWithAuth('/api/business/cards').then(r => r.json()),
+        fetchWithAuth('/api/business/approvals').then(r => r.json()),
       ])
       setCards(cardsRes.cards || [])
       setRequests(reqRes.requests || [])
@@ -48,7 +49,7 @@ export default function BusinessPage() {
 
   async function handleApprove(id: string) {
     try {
-      await fetch(`/api/business/approvals/${id}/approve`, { method: 'POST' })
+      await fetchWithAuth(`/api/business/approvals/${id}/approve`, { method: 'POST' })
       setRequests(rs => rs.filter(r => r._id !== id))
       toast.success('Request approved')
     } catch { toast.error('Failed to approve') }
@@ -56,7 +57,7 @@ export default function BusinessPage() {
 
   async function handleReject(id: string) {
     try {
-      await fetch(`/api/business/approvals/${id}/reject`, { method: 'POST' })
+      await fetchWithAuth(`/api/business/approvals/${id}/reject`, { method: 'POST' })
       setRequests(rs => rs.filter(r => r._id !== id))
       toast.success('Request rejected')
     } catch { toast.error('Failed to reject') }

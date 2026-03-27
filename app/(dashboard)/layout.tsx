@@ -1,7 +1,20 @@
+'use client'
 import Sidebar from '@/components/shared/Sidebar'
 import Navbar from '@/components/shared/Navbar'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { tokenStorage } from '@/utils/tokenStorage'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  useEffect(() => {
+    const token = tokenStorage.getToken()
+    if (!token) {
+      router.push('/login')
+    }
+  }, [router])
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar />

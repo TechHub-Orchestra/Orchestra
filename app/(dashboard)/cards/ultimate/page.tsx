@@ -5,6 +5,7 @@ import RoutingModeSelector from '@/components/routing/RoutingModeSelector'
 import CardPriorityList from '@/components/routing/CardPriorityList'
 import UltimateCardPanel from '@/components/routing/UltimateCardPanel'
 import toast from 'react-hot-toast'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface Card {
   _id: string
@@ -22,7 +23,7 @@ export default function UltimateCardPage() {
 
   const fetchCards = useCallback(async () => {
     try {
-      const res = await fetch('/api/cards')
+      const res = await fetchWithAuth('/api/cards')
       const data = await res.json()
       const active = (data.cards || []).filter((c: { cardStatus: string }) => c.cardStatus === '1')
       setCards(active)
@@ -35,7 +36,7 @@ export default function UltimateCardPage() {
   async function handleModeChange(newMode: string) {
     setMode(newMode)
     try {
-      await fetch('/api/routing/mode', {
+      await fetchWithAuth('/api/routing/mode', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: newMode }),
@@ -49,7 +50,7 @@ export default function UltimateCardPage() {
   async function handleReorder(reordered: Card[]) {
     setOrderedCards(reordered)
     try {
-      await fetch('/api/routing/priority', {
+      await fetchWithAuth('/api/routing/priority', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cardIds: reordered.map(c => c._id) }),
