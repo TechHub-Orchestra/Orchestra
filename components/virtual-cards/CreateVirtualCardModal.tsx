@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
 import { fetchWithAuth } from '@/lib/fetch-utils'
@@ -10,15 +10,37 @@ interface CreateVirtualCardModalProps {
   onCreated: () => void
 }
 
+interface PhysicalCard {
+  _id: string
+  label?: string
+  bank?: string
+}
+
 export default function CreateVirtualCardModal({ open, onClose, onCreated }: CreateVirtualCardModalProps) {
   const [loading, setLoading] = useState(false)
+  const [physicalCards, setPhysicalCards] = useState<PhysicalCard[]>([])
   const [form, setForm] = useState({
     label: '',
     merchant: '',
     spendLimit: '',
+    parentCardId: '',
     autoRenew: true,
-    color: '#0052FF',
   })
+
+  useEffect(() => {
+    if (!open) return
+    fetchWithAuth('/api/cards')
+      .then(r => r.json())
+      .then(d => {
+        const cards = d.cards || []
+        setPhysicalCards(cards)
+        if (cards.length > 0 && !form.parentCardId) {
+          setForm(f => ({ ...f, parentCardId: cards[0]._id }))
+        }
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   if (!open) return null
 
@@ -28,24 +50,33 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!form.parentCardId) {
+      toast.error('Please add a physical card first before creating a virtual card')
+      return
+    }
     setLoading(true)
     try {
       const res = await fetchWithAuth('/api/virtual-cards', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
-          spendLimit: parseFloat(form.spendLimit) * 100,
+          label: form.label,
+          merchant: form.merchant || undefined,
+          spendLimit: parseFloat(form.spendLimit),
+          parentCardId: form.parentCardId,
+          autoRenew: form.autoRenew,
         }),
       })
-      if (!res.ok) throw new Error()
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed')
+      }
       toast.success('Virtual card created!')
       onCreated()
       onClose()
-    } catch {
-      toast.error('Failed to create virtual card')
+      setForm({ label: '', merchant: '', spendLimit: '', parentCardId: '', autoRenew: true })
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create virtual card')
     } finally {
       setLoading(false)
     }
@@ -65,6 +96,29 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Parent card selector */}
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Linked Physical Card</label>
+            {physicalCards.length === 0 ? (
+              <p className="text-amber-600 text-xs bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                ⚠ You need to add a physical card first before creating a virtual card.
+              </p>
+            ) : (
+              <select
+                value={form.parentCardId}
+                onChange={e => update('parentCardId', e.target.value)}
+                required
+                className="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#E94560] focus:outline-none"
+              >
+                {physicalCards.map(c => (
+                  <option key={c._id} value={c._id}>
+                    {c.label || c.bank || c._id}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Card Label</label>
             <input
@@ -78,7 +132,7 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Merchant (optional)</label>
+            <label className="text-xs text-gray-500 mb-1 block">Lock to Merchant (optional)</label>
             <input
               type="text"
               placeholder="e.g. Netflix"
@@ -89,31 +143,16 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Monthly Spend Limit (NGN)</label>
+            <label className="text-xs text-gray-500 mb-1 block">Monthly Spend Limit (₦)</label>
             <input
               type="number"
               placeholder="e.g. 5000"
               value={form.spendLimit}
               onChange={e => update('spendLimit', e.target.value)}
               required
+              min="1"
               className="w-full border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#E94560] focus:outline-none"
             />
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-500 mb-2 block">Card Color</label>
-            <div className="flex gap-2">
-              {['#0052FF', '#E94560', '#1A1A2E', '#10B981', '#F59E0B', '#6366F1', '#8B5CF6'].map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => update('color', c)}
-                  className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110
-                    ${form.color === c ? 'border-gray-900 scale-110' : 'border-transparent'}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
           </div>
 
           <label className="flex items-center gap-3 cursor-pointer">
@@ -128,7 +167,7 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
 
           <button
             type="submit"
-            disabled={loading || !form.label || !form.spendLimit}
+            disabled={loading || !form.label || !form.spendLimit || !form.parentCardId}
             className="w-full bg-[#E94560] text-white py-3 rounded-xl font-semibold hover:bg-[#d63850] transition disabled:opacity-50"
           >
             {loading ? 'Creating…' : 'Create Virtual Card'}

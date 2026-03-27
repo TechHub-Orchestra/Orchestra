@@ -29,7 +29,7 @@ export default function VirtualCardsPage() {
     try {
       const res = await fetchWithAuth('/api/virtual-cards')
       const data = await res.json()
-      setCards(data.cards || [])
+      setCards(data.virtualCards || data.cards || [])
     } catch {
       setError(true)
     } finally {

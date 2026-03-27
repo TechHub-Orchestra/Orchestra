@@ -21,30 +21,69 @@ export default function FinancialHealthScore() {
   const [animated, setAnimated] = useState(0)
 
   useEffect(() => {
-    fetchWithAuth('/api/insights')
-      .then(r => r.json())
-      .then(d => {
-        const score = d.insights?.financialScore ?? d.financialScore ?? 72
-        const scoreLabel = d.insights?.scoreLabel ?? ''
-        const summary = d.insights?.summary ?? ''
-        const observations = d.insights?.insights ?? []
-        setData({ financialScore: score, scoreLabel, summary, observations })
+    const animate = (score: number) => {
+      let start = 0
+      const step = score / 60
+      const timer = setInterval(() => {
+        start += step
+        if (start >= score) { setAnimated(score); clearInterval(timer) }
+        else setAnimated(Math.floor(start))
+      }, 16)
+      return () => clearInterval(timer)
+    }
+
+    const fetchData = async () => {
+      try {
+        const r = await fetchWithAuth('/api/insights')
+        const d = await r.json()
+        if (r.ok && d.insights) {
+          const score = d.insights?.financialScore ?? 72
+          setData({
+            financialScore: score,
+            scoreLabel: d.insights?.scoreLabel ?? '',
+            summary: d.insights?.summary ?? '',
+            observations: d.insights?.insights ?? [],
+          })
+          setLoading(false)
+          return animate(score)
+        }
+      } catch { /* fallthrough */ }
+
+      // Fallback: calculate score from transaction diversity + card count
+      try {
+        const [txRes, cardRes] = await Promise.all([
+          fetchWithAuth('/api/transactions?limit=50'),
+          fetchWithAuth('/api/cards'),
+        ])
+        const { transactions = [] } = await txRes.json()
+        const { cards = [] } = await cardRes.json()
+
+        const categories = new Set(transactions.map((t: { category: string }) => t.category)).size
+        const cardCount = cards.length
+        const txCount = transactions.length
+        // Heuristic: more diversity + more cards = healthier score
+        const score = Math.min(100, Math.max(20,
+          40 + (cardCount * 10) + (categories * 5) + Math.min(txCount, 10)
+        ))
+        const label = score >= 75 ? 'Good' : score >= 50 ? 'Fair' : 'Getting Started'
+        setData({
+          financialScore: score,
+          scoreLabel: label,
+          summary: cardCount === 0
+            ? 'Add your first card to start building your financial profile.'
+            : `You have ${cardCount} card${cardCount > 1 ? 's' : ''} connected and ${txCount} transactions tracked.`,
+          observations: [],
+        })
         setLoading(false)
-        // Animate the gauge
-        let start = 0
-        const step = score / 60
-        const timer = setInterval(() => {
-          start += step
-          if (start >= score) { setAnimated(score); clearInterval(timer) }
-          else setAnimated(Math.floor(start))
-        }, 16)
-        return () => clearInterval(timer)
-      })
-      .catch(() => {
-        setData({ financialScore: 72, scoreLabel: 'Good', summary: 'Your finances are on track.', observations: [] })
-        setAnimated(72)
+        return animate(score)
+      } catch {
+        setData({ financialScore: 50, scoreLabel: 'Pending', summary: 'Connect cards to see your score.', observations: [] })
+        setAnimated(50)
         setLoading(false)
-      })
+      }
+    }
+
+    fetchData()
   }, [])
 
   if (loading) {

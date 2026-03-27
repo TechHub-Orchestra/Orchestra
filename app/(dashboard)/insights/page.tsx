@@ -4,7 +4,6 @@ import AIInsightsPanel from '@/components/insights/AIInsightsPanel'
 import SpendingBreakdown from '@/components/insights/SpendingBreakdown'
 import SavingsCalculator from '@/components/insights/SavingsCalculator'
 import AnomalyFeed from '@/components/insights/AnomalyFeed'
-import RecommendationCard from '@/components/insights/RecommendationCard'
 import FinancialHealthScore from '@/components/insights/FinancialHealthScore'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -21,13 +20,34 @@ export default function InsightsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchWithAuth('/api/insights')
-      .then(r => r.json())
-      .then((d: InsightsData) => {
-        setByCategory(d.insights?.byCategory || {})
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    const load = async () => {
+      // Try the AI insights endpoint first
+      try {
+        const r = await fetchWithAuth('/api/insights')
+        const d: InsightsData = await r.json()
+        if (r.ok && d.insights?.byCategory) {
+          setByCategory(d.insights.byCategory)
+          setLoading(false)
+          return
+        }
+      } catch { /* fallthrough */ }
+
+      // Fallback: aggregate byCategory from raw transactions
+      try {
+        const r = await fetchWithAuth('/api/transactions?limit=200')
+        const d = await r.json()
+        const txs: Array<{ category: string; amount: number }> = d.transactions || []
+        const catMap: Record<string, number> = {}
+        for (const tx of txs) {
+          if (tx.amount < 0) {
+            catMap[tx.category] = (catMap[tx.category] || 0) + Math.abs(tx.amount)
+          }
+        }
+        setByCategory(catMap)
+      } catch { /* empty state */ }
+      setLoading(false)
+    }
+    load()
   }, [])
 
   async function downloadReport() {
@@ -94,27 +114,6 @@ export default function InsightsPage() {
               </h3>
               <AnomalyFeed />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <RecommendationCard
-              title="Optimize Routing"
-              description="You've reached 80% of your GTBank limit. Consider switching to 'Balance Optimized' routing to avoid declined transactions."
-              impact="Avoid Declined Payments"
-              actionLabel="Switch Mode"
-            />
-            <RecommendationCard
-              title="Virtual Subscriptions"
-              description="We detected a recurring Netflix payment on your main card. Moving this to a virtual card could save you 5% in fees."
-              impact="₦1,500 monthly fees"
-              actionLabel="Move to Virtual"
-            />
-            <RecommendationCard
-              title="Salary Distribution"
-              description="Your salary just hit! We suggest distributing 30% to your Access Bank account for better liquidity."
-              impact="Better Liquidity"
-              actionLabel="Distribute Now"
-            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

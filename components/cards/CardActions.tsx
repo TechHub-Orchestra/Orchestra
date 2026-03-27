@@ -20,7 +20,11 @@ export default function CardActions({ cardId, cardStatus, onStatusChange }: Card
     setLoading(true)
     try {
       const action = isBlocked ? 'unblock' : 'block'
-      const res = await fetchWithAuth(`/api/cards/${cardId}/${action}`, { method: 'POST' })
+      const res = await fetchWithAuth(`/api/cards/${cardId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
       if (!res.ok) throw new Error()
       const newStatus = isBlocked ? '1' : '2'
       onStatusChange(newStatus)
