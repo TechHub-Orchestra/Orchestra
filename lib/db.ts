@@ -27,17 +27,30 @@ const DEFAULT_DATA: Data = {
   expenseRequests: []
 }
 
+let memoryData: Data | null = null;
+
 function readDB(): Data {
+  if (memoryData) return memoryData
   if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DATA, null, 2))
+    memoryData = DEFAULT_DATA
     return DEFAULT_DATA
   }
-  const content = fs.readFileSync(DB_PATH, 'utf-8')
-  return JSON.parse(content)
+  try {
+    const content = fs.readFileSync(DB_PATH, 'utf-8')
+    memoryData = JSON.parse(content)
+  } catch (err) {
+    memoryData = DEFAULT_DATA
+  }
+  return memoryData || DEFAULT_DATA
 }
 
 function writeDB(data: Data) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
+  memoryData = data // Always keep latest in memory
+  try {
+    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
+  } catch (err: any) {
+    console.warn('DB Write Failed (Read-only filesystem?):', err.message);
+  }
 }
 
 export const db = {

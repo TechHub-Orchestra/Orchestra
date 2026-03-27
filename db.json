@@ -19,6 +19,15 @@
       "businessName": "Test Corp",
       "createdAt": "2026-03-26T20:15:53.492Z",
       "updatedAt": "2026-03-26T20:15:53.492Z"
+    },
+    {
+      "_id": "demo-user",
+      "name": "Demo User",
+      "email": "demo@orchestra.ng",
+      "password": "ZGVtbzEyMzQ=",
+      "role": "individual",
+      "createdAt": "2026-03-27T00:00:00.000Z",
+      "updatedAt": "2026-03-27T00:00:00.000Z"
     }
   ],
   "cards": [
