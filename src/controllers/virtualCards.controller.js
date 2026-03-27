@@ -35,7 +35,10 @@ export async function updateVirtualCard(req, res) {
 
   if (action === 'pause')  { vc.paused = true;  vc.cardStatus = '2'; await vc.save() }
   if (action === 'resume') { vc.paused = false; vc.cardStatus = '1'; await vc.save() }
-  if (action === 'delete') { await vc.deleteOne() }
+  if (action === 'delete') {
+    await vc.deleteOne()
+    return res.json({ success: true })   // return early — no document to echo back
+  }
 
   // When CARD360_ENABLED=true, also call card360.blockCard/unblockCard here
 

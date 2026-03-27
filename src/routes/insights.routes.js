@@ -7,7 +7,5 @@ router.use(protect)
 
 router.get('/',         getInsights)
 router.post('/savings', getSavings)
-// Fallback path just in case
-router.post('/generate', getInsights) 
 
 export default router

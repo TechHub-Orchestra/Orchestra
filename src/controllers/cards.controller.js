@@ -57,17 +57,29 @@ export async function addCard(req, res) {
     return res.status(400).json({ error: 'Card not found or invalid details' })
   }
 
+  // Explicitly map only known Card360 fields — never spread detail directly
+  // to avoid unknown fields silently overwriting our schema.
   const detail = c360.cardDetails[0]
   const card   = await Card.create({
-    ...detail,
-    userId:   req.user._id,
+    pan:         detail.pan,
+    expiryDate:  detail.expiryDate,
+    issuerNr:    detail.issuerNr,
+    firstName:   detail.firstName,
+    lastName:    detail.lastName,
+    nameOnCard:  detail.nameOnCard,
+    cardProgram: detail.cardProgram,
+    customerId:  detail.customerId,
+    cardStatus:  detail.cardStatus,
+    seqNr:       detail.seqNr,
+    userId:      req.user._id,
     label,
     bank,
     color,
-    cardType: cardType || 'debit',
+    cardType:    cardType || 'debit',
   })
 
-  res.status(201).json({ card })
+  const cardObj = card.toObject()
+  res.status(201).json({ card: { ...cardObj, pan: maskPan(cardObj.pan) } })
 }
 
 export async function getCard(req, res) {
@@ -115,17 +127,25 @@ export async function getCardBalance(req, res) {
   const card = await Card.findOne({ _id: req.params.id, userId: req.user._id })
   if (!card) return res.status(404).json({ error: 'Card not found' })
 
-  const data = await card360.getBalance(card.pan, card.cardType)
-  
-  const balance = await CardBalance.create({
+  // Serve from cache if a record less than 5 minutes old exists
+  const cached = await CardBalance.findOne({
     pan: card.pan,
-    availableBalance: data.availableBalance,
-    ledgerBalance: data.ledgerBalance,
-    currency: data.currency,
-    responseCode: data.code,
-    responseDescription: data.description,
-    cardId: card._id,
+    fetchedAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) }
+  }).sort({ fetchedAt: -1 })
+
+  if (cached) return res.json({ balance: cached, fromCache: true })
+
+  // Cache miss — call Card360 and persist the result
+  const data    = await card360.getBalance(card.pan, card.cardType)
+  const balance = await CardBalance.create({
+    pan:                 card.pan,
+    cardId:              card._id,
+    availableBalance:    data.availableBalance,
+    ledgerBalance:       data.ledgerBalance,
+    currency:            data.currency   || 'NGN',
+    responseCode:        data.code       || '00',
+    responseDescription: data.description || 'Successful',
   })
 
-  res.json({ balance })
+  res.json({ balance, fromCache: false })
 }

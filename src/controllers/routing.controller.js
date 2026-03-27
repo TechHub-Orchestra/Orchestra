@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import RoutingRule from '../db/models/RoutingRule.js'
 import Transaction from '../db/models/Transaction.js'
 import { resolvePayment } from '../services/routing.js'
@@ -20,6 +21,7 @@ export async function updateRule(req, res) {
 }
 
 export async function simulate(req, res) {
+  // amount is already in kobo — validated as integer by simulateRoutingSchema
   const { amount, merchant, category, save = false } = req.body
 
   const result = await resolvePayment(req.user._id, amount)
@@ -35,9 +37,13 @@ export async function simulate(req, res) {
       category:        category || 'other',
       merchant,
       narration:       `Simulated: ${merchant}`,
-      reference:       `SIM-${Date.now()}`,
+      reference:       randomUUID(),
       transactionDate: new Date(),
-      simulatedSplit:  true
+      // Map each allocation to the schema shape: [{ cardId, amount }]
+      simulatedSplit: result.allocations.map(a => ({
+        cardId: a.card._id,
+        amount: a.charge,
+      }))
     })
   }
 

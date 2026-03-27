@@ -93,64 +93,52 @@ const txData = Array.from({ length: 30 }, (_, i) => ({
 
 await Transaction.insertMany(txData)
 
-// ── Virtual Card ─────────────────────────────────────────────────────────────
-await VirtualCard.create({
-  userId: alice._id,
-  parentCardId: aliceDebit._id,
-  label: 'Netflix Subscription',
-  merchant: 'Netflix',
-  spendLimit: 5_000_00,  // ₦5,000/month
-  amountSpent: 1_500_00,
-  pan: '4111111111111111',
-  expiryDate: '2612',
+// ── Virtual Cards ─────────────────────────────────────────────────────────────
+// Two demo virtual cards: Netflix (active) and Spotify (nearly exhausted)
+await VirtualCard.insertMany([
+  {
+    userId: alice._id,
+    parentCardId: aliceDebit._id,
+    label: 'Netflix Sub',
+    merchant: 'Netflix',
+    spendLimit: 500000,    // ₦5,000/month in kobo
+    amountSpent: 350000,   // ₦3,500 spent
+    pan: 'VIRT923456781200',
+    expiryDate: '2712'
+  },
+  {
+    userId: alice._id,
+    parentCardId: aliceDebit._id,
+    label: 'Spotify Sub',
+    merchant: 'Spotify',
+    spendLimit: 300000,    // ₦3,000/month in kobo
+    amountSpent: 299900,   // nearly exhausted
+    pan: 'VIRT923456789901',
+    expiryDate: '2801'
+  }
+])
+
+// ── Business Cards & Approvals ────────────────────────────────────────────────
+const bCard = await BusinessCard.create({
+  businessUserId: bob._id,
+  assignedTo: 'Emeka Okafor',
+  purpose: 'Q1 Field Sales Trip',
+  budget: 15000000,          // ₦150,000 in kobo
+  amountSpent: 4750000,      // ₦47,500 spent
+  merchantCategories: ['airlines', 'hotels', 'restaurants'],
+  approvalThreshold: 2000000, // ₦20,000 — above this needs approval
+  pan: 'BIZ5000219904992',
+  expiresAt: new Date(Date.now() + 60 * 86400000)
 })
 
-  // --- DAY 3 DEMO DATA: Virtual Cards ---
-  await VirtualCard.insertMany([
-    {
-      userId: alice._id,
-      parentCardId: aliceDebit._id,  // GTBank Main
-      label: 'Netflix Sub',
-      merchant: 'Netflix',
-      spendLimit: 500000,    // 5k
-      amountSpent: 350000,   // 3.5k
-      pan: 'VIRT923456781200',
-      expiryDate: '2712'
-    },
-    {
-      userId: alice._id,
-      parentCardId: aliceDebit._id,  // GTBank Main
-      label: 'Spotify Sub',
-      merchant: 'Spotify',
-      spendLimit: 300000,    // 3k
-      amountSpent: 299900,   // 2.999k (early maxed)
-      pan: 'VIRT923456789901',
-      expiryDate: '2801'
-    }
-  ])
-
-  // --- DAY 3 DEMO DATA: Business Cards ---
-  const bCard = await BusinessCard.create({
-    businessUserId: bob._id,
-    assignedTo: 'Emeka Okafor',
-    purpose: 'Q1 Field Sales Trip',
-    budget: 15000000, // 150k NGN
-    amountSpent: 4750000, // 47.5k NGN
-    merchantCategories: ['airlines', 'hotels', 'restaurants'],
-    approvalThreshold: 2000000, // 20k NGN
-    pan: 'BIZ5000219904992',
-    expiresAt: new Date(Date.now() + 60 * 86400000)
-  })
-
-  // --- DAY 3 DEMO DATA: Approval Request ---
-  await ApprovalRequest.create({
-    businessCardId: bCard._id,
-    requestedBy: 'Emeka Okafor',
-    amount: 4500000, // 45k NGN
-    merchant: 'Air Peace',
-    reason: 'Flight to Abuja for Q1 sales meeting',
-    status: 'pending'
-  })
+await ApprovalRequest.create({
+  businessCardId: bCard._id,
+  requestedBy:    'Emeka Okafor',
+  amount:         4500000,   // ₦45,000 in kobo
+  merchant:       'Air Peace',
+  reason:         'Flight to Abuja for Q1 sales meeting',
+  status:         'pending'
+})
 
 console.log('✅  Seed complete!')
 console.log('   alice@example.com / Password123!')

@@ -81,7 +81,8 @@ export const createVirtualCardSchema = z.object({
   parentCardId: z.string().min(1),
   label:        z.string().min(1),
   merchant:     z.string().optional(),
-  spendLimit:   z.number().int().positive('spendLimit must be positive kobo'),
+  spendLimit:   z.number().positive('spendLimit must be a positive number in Naira'),
+  // Controller multiplies by 100 to convert Naira → kobo before saving
   autoRenew:    z.boolean().default(true),
 })
 
