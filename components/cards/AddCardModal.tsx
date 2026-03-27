@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface AddCardModalProps {
   open: boolean
@@ -36,7 +37,7 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
     e.preventDefault()
     setLoading(true)
     try {
-      const res = await fetch('/api/cards', {
+      const res = await fetchWithAuth('/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, color: selectedColor }),

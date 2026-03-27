@@ -5,6 +5,7 @@ import CreateVirtualCardModal from '@/components/virtual-cards/CreateVirtualCard
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import ErrorState from '@/components/shared/ErrorState'
 import { Plus } from 'lucide-react'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface VirtualCard {
   _id: string
@@ -26,7 +27,7 @@ export default function VirtualCardsPage() {
     setLoading(true)
     setError(false)
     try {
-      const res = await fetch('/api/virtual-cards')
+      const res = await fetchWithAuth('/api/virtual-cards')
       const data = await res.json()
       setCards(data.cards || [])
     } catch {

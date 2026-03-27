@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import CardGrid from '@/components/cards/CardGrid'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import ErrorState from '@/components/shared/ErrorState'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface Card {
   _id: string
@@ -26,7 +27,7 @@ export default function CardsPage() {
     setLoading(true)
     setError(false)
     try {
-      const res = await fetch('/api/cards')
+      const res = await fetchWithAuth('/api/cards')
       const data = await res.json()
       setCards(data.cards || [])
     } catch {

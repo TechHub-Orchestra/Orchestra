@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface CreateVirtualCardModalProps {
   open: boolean
@@ -29,9 +30,11 @@ export default function CreateVirtualCardModal({ open, onClose, onCreated }: Cre
     e.preventDefault()
     setLoading(true)
     try {
-      const res = await fetch('/api/virtual-cards', {
+      const res = await fetchWithAuth('/api/virtual-cards', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           ...form,
           spendLimit: parseFloat(form.spendLimit) * 100,

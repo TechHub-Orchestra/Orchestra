@@ -4,6 +4,7 @@ import BalanceSummary from '@/components/dashboard/BalanceSummary'
 import QuickStats from '@/components/dashboard/QuickStats'
 import SpendingChart from '@/components/dashboard/SpendingChart'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -22,8 +23,8 @@ export default function DashboardPage() {
   useEffect(() => {
     // Hydrate stats from API
     Promise.all([
-      fetch('/api/cards').then(r => r.json()),
-      fetch('/api/virtual-cards').then(r => r.json()),
+      fetchWithAuth('/api/cards').then(r => r.json()),
+      fetchWithAuth('/api/virtual-cards').then(r => r.json()),
     ])
       .then(([cardsData, vcData]) => {
         setStats(s => ({
