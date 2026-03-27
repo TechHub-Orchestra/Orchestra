@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { getVirtualCards, createVirtualCard, updateVirtualCardStatus } from '@/api/virtualCards';
+import { getVirtualCards, createVirtualCard, updateVirtualCardStatus } from '@/api/virtual-cards';
 import { queryClient } from '@/lib/queryClient';
 
 export const useVirtualCards = () => {
