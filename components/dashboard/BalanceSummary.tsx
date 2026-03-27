@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { toNaira } from '@/utils/format'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface SummaryData {
   total: number
@@ -13,7 +14,7 @@ export default function BalanceSummary() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/cards')
+    fetchWithAuth('/api/cards')
       .then(r => r.json())
       .then(({ cards = [] }) => {
         const total = cards.reduce((s: number, c: { availableBalance?: number }) => s + (c.availableBalance || 0), 0)

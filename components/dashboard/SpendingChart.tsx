@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { toNaira } from '@/utils/format'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface SpendingDataPoint {
   month: string
@@ -14,7 +15,7 @@ export default function SpendingChart() {
 
   useEffect(() => {
     // Fetch or derive spending history from transactions
-    fetch('/api/insights')
+    fetchWithAuth('/api/insights')
       .then(r => r.json())
       .then(d => {
         // Use mock data derived from insights if no dedicated endpoint

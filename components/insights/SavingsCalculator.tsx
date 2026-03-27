@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { toNaira } from '@/utils/format'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 const CATEGORIES = ['food', 'transport', 'subscriptions', 'utilities', 'entertainment', 'shopping']
 
@@ -21,7 +22,7 @@ export default function SavingsCalculator({ byCategory }: SavingsCalculatorProps
 
   const calculate = useCallback(async () => {
     try {
-      const res = await fetch('/api/insights/savings', {
+      const res = await fetchWithAuth('/api/insights/savings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adjustments }),

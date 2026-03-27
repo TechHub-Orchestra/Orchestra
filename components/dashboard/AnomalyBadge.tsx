@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface Anomaly {
   merchant: string
@@ -12,7 +13,7 @@ export default function AnomalyBadge() {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    fetch('/api/anomalies')
+    fetchWithAuth('/api/anomalies')
       .then(r => r.json())
       .then(d => setAnomalies(d.anomalies || []))
       .catch(() => {})

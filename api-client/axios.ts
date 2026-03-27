@@ -2,7 +2,7 @@ import axios from 'axios';
 import { tokenStorage } from '@/utils/tokenStorage';
 
 const axiosInstance = axios.create({
-  baseURL: '',
+  baseURL: 'https://orchestra-server.onrender.com',
   headers: {
     'Content-Type': 'application/json',
   },

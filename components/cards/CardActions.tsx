@@ -3,6 +3,7 @@ import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { Shield, ShieldOff, Trash2, Eye, EyeOff } from 'lucide-react'
 import { cardStatusLabel, cardStatusColor } from '@/utils/format'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface CardActionsProps {
   cardId: string
@@ -19,7 +20,7 @@ export default function CardActions({ cardId, cardStatus, onStatusChange }: Card
     setLoading(true)
     try {
       const action = isBlocked ? 'unblock' : 'block'
-      const res = await fetch(`/api/cards/${cardId}/${action}`, { method: 'POST' })
+      const res = await fetchWithAuth(`/api/cards/${cardId}/${action}`, { method: 'POST' })
       if (!res.ok) throw new Error()
       const newStatus = isBlocked ? '1' : '2'
       onStatusChange(newStatus)

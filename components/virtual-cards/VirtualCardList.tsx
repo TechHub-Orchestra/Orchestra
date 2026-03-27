@@ -4,6 +4,7 @@ import EmptyState from '@/components/shared/EmptyState'
 import { useState } from 'react'
 import CreateVirtualCardModal from './CreateVirtualCardModal'
 import toast from 'react-hot-toast'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 
 interface VirtualCard {
   _id: string
@@ -25,7 +26,7 @@ export default function VirtualCardList({ cards, onRefresh }: VirtualCardListPro
   const [localCards, setLocalCards] = useState(cards)
 
   async function handlePause(id: string) {
-    const res = await fetch(`/api/virtual-cards/${id}/pause`, { method: 'POST' })
+    const res = await fetchWithAuth(`/api/virtual-cards/${id}/pause`, { method: 'POST' })
     if (res.ok) {
       setLocalCards(cs => cs.map(c => c._id === id ? { ...c, paused: true } : c))
       toast.success('Card paused')
@@ -33,7 +34,7 @@ export default function VirtualCardList({ cards, onRefresh }: VirtualCardListPro
   }
 
   async function handleResume(id: string) {
-    const res = await fetch(`/api/virtual-cards/${id}/resume`, { method: 'POST' })
+    const res = await fetchWithAuth(`/api/virtual-cards/${id}/resume`, { method: 'POST' })
     if (res.ok) {
       setLocalCards(cs => cs.map(c => c._id === id ? { ...c, paused: false } : c))
       toast.success('Card resumed')
@@ -42,7 +43,7 @@ export default function VirtualCardList({ cards, onRefresh }: VirtualCardListPro
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this virtual card?')) return
-    const res = await fetch(`/api/virtual-cards/${id}`, { method: 'DELETE' })
+    const res = await fetchWithAuth(`/api/virtual-cards/${id}`, { method: 'DELETE' })
     if (res.ok) {
       setLocalCards(cs => cs.filter(c => c._id !== id))
       toast.success('Card deleted')
