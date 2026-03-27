@@ -35,7 +35,6 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    setLoading(true)
     Promise.all([
       fetchWithAuth('/api/cards').then(r => r.json()),
       fetchWithAuth('/api/virtual-cards').then(r => r.json()),
