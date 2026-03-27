@@ -31,11 +31,8 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
     cvv: '',
     nameOnCard: '',
     cardProgram: 'VERVE',
-    issuerNr: '',
-    cardSequenceNr: '',
     cardType: 'debit',
-    accountNumber: '',
-    spendLimit: ''
+    accountNumber: ''
   })
 
   if (!open) return null
@@ -50,8 +47,7 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
     try {
       const payload = {
         ...form,
-        color: selectedColor,
-        spendLimit: form.spendLimit ? parseFloat(form.spendLimit) : undefined
+        color: selectedColor
       }
 
       // Backend expects expiryDate in YYMM format (e.g., '2612')
@@ -131,15 +127,7 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
             <InputField label="CVV" name="cvv" value={form.cvv} onChange={v => updateField('cvv', v)} placeholder="123" maxLength={4} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <InputField label="Issuer Nr" name="issuerNr" value={form.issuerNr} onChange={v => updateField('issuerNr', v)} placeholder="e.g. 123" />
-            <InputField label="Sequence Nr" name="cardSequenceNr" value={form.cardSequenceNr} onChange={v => updateField('cardSequenceNr', v)} placeholder="e.g. 01" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <InputField label="Account Number (10 digits)" name="accountNumber" value={form.accountNumber} onChange={v => updateField('accountNumber', v)} placeholder="0123456789" maxLength={10} />
-            <InputField label="Monthly Spend Limit (₦)" name="spendLimit" value={form.spendLimit} onChange={v => updateField('spendLimit', v)} placeholder="50000" />
-          </div>
+          <InputField label="Account Number (10 digits)" name="accountNumber" value={form.accountNumber} onChange={v => updateField('accountNumber', v)} placeholder="0123456789" maxLength={10} />
 
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Card Type</label>
