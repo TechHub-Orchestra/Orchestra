@@ -14,19 +14,46 @@ export default function SpendingChart() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch or derive spending history from transactions
-    fetchWithAuth('/api/insights')
-      .then(r => r.json())
-      .then(d => {
-        // Use mock data derived from insights if no dedicated endpoint
-        const spending = d.insights?.spendingByMonth || generateMockData()
-        setData(spending)
-        setLoading(false)
-      })
-      .catch(() => {
-        setData(generateMockData())
-        setLoading(false)
-      })
+    const fetchData = async () => {
+      try {
+        const r = await fetchWithAuth('/api/insights')
+        const d = await r.json()
+        if (r.ok && d.insights?.spendingByMonth) {
+          setData(d.insights.spendingByMonth)
+          return
+        }
+      } catch { /* fallthrough */ }
+
+      // Fallback: build from real transactions
+      try {
+        const txRes = await fetchWithAuth('/api/transactions?limit=200')
+        const txData = await txRes.json()
+        const txs: any[] = txData.transactions || []
+        
+        const monthlySet: Record<string, number> = {}
+        txs.forEach(tx => {
+           if (tx.amount < 0) {
+               const date = new Date(tx.date || tx.transactionDate || Date.now())
+               const month = date.toLocaleString('default', { month: 'short' })
+               monthlySet[month] = (monthlySet[month] || 0) + Math.abs(tx.amount)
+           }
+        })
+        
+        if (Object.keys(monthlySet).length === 0) {
+           // Provide an empty array rather than mock data if no transactions
+           setData([])
+        } else {
+           const mapArr = Object.entries(monthlySet).map(([month, amount]) => ({ month, amount: amount as number }))
+           setData(mapArr.reverse()) // Just a simple ordering fix for the chart
+        }
+      } catch {
+         setData([])
+      } finally {
+         setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   if (loading) {
@@ -49,7 +76,3 @@ export default function SpendingChart() {
   )
 }
 
-function generateMockData(): SpendingDataPoint[] {
-  const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb']
-  return months.map(month => ({ month, amount: Math.floor(Math.random() * 15000000 + 3000000) }))
-}

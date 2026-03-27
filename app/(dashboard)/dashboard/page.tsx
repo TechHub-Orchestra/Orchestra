@@ -16,10 +16,10 @@ interface Transaction {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
-    totalCards: 3,
-    virtualCards: 4,
-    monthlySpend: 12450000,
-    savedThisMonth: 85000,
+    totalCards: 0,
+    virtualCards: 0,
+    monthlySpend: 0,
+    savedThisMonth: 0,
   })
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [recentTx, setRecentTx] = useState<Transaction[]>([])
@@ -35,13 +35,30 @@ export default function DashboardPage() {
     Promise.all([
       fetchWithAuth('/api/cards').then(r => r.json()),
       fetchWithAuth('/api/virtual-cards').then(r => r.json()),
+      fetchWithAuth('/api/transactions?limit=100').then(r => r.json()),
+      fetchWithAuth('/api/insights').then(r => r.json()).catch(() => ({})), // fetch insights with fail-safe
     ])
-      .then(([cardsData, vcData]) => {
-        setStats(s => ({
-          ...s,
-          totalCards: cardsData.cards?.length ?? s.totalCards,
-          virtualCards: vcData.cards?.length ?? s.virtualCards,
-        }))
+      .then(([cardsData, vcData, txData, insightsData]) => {
+        
+        let monthlySpend = 0;
+        if(txData && txData.transactions) {
+            // Very simple "monthly spend" logic -> just total of all recent transactions for now.
+            monthlySpend = txData.transactions.reduce((acc: number, tx: any) => {
+              // Transactions usually have negative amounts for spending (debits)
+              if (tx.amount < 0) {
+                  return acc + Math.abs(tx.amount);
+              }
+              return acc;
+            }, 0);
+        }
+
+        setStats({
+          totalCards: cardsData?.cards?.length || 0,
+          virtualCards: vcData?.virtualCards?.length || vcData?.cards?.length || 0,
+          monthlySpend: monthlySpend,
+           // Use insight savings if available, else 0
+          savedThisMonth: insightsData?.insights?.savingsOpportunity || 0, 
+        })
       })
       .catch(() => {})
   }, [])
