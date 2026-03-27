@@ -8,7 +8,8 @@ function parseInitial(): string {
   try {
     const token = tokenStorage.getToken()
     if (!token) return 'U'
-    const payload = JSON.parse(atob(token.split('.')[1]))
+    // Our token is a base64-encoded JSON object, not a 3-part JWT.
+    const payload = JSON.parse(atob(token))
     const name: string = payload?.name || payload?.email || 'User'
     return name.charAt(0).toUpperCase()
   } catch {

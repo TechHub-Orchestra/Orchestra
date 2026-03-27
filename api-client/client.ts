@@ -1,3 +1,5 @@
+import { tokenStorage } from '@/utils/tokenStorage';
+
 const BASE_URL = 'https://orchestra-server.onrender.com';
 
 export async function apiClient<T>(
@@ -6,7 +8,7 @@ export async function apiClient<T>(
   body?: any,
   headers: Record<string, string> = {}
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('orchestra_token') : null;
+  const token = tokenStorage.getToken();
 
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
@@ -19,10 +21,8 @@ export async function apiClient<T>(
   });
 
   if (res.status === 401) {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('orchestra_token');
-      // window.location.href = '/login'; // Optional: Redirect to login
-    }
+    tokenStorage.clearToken();
+    // window.location.href = '/login'; // Optional: Redirect to login
   }
 
   const data = await res.json();

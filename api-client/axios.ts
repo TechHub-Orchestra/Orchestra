@@ -12,7 +12,15 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token = tokenStorage.getToken();
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // In Axios 1.x+, config.headers is an object that can be modified directly
+      // or using the set() method if it's an AxiosHeaders instance.
+      if (config.headers && typeof config.headers.set === 'function') {
+        config.headers.set('Authorization', `Bearer ${token}`);
+      } else {
+        // Fallback for older axios versions or if headers is a plain object
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
     }
     return config;
   },

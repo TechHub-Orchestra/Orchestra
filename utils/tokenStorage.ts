@@ -12,16 +12,30 @@ function decodeBase64Url(str: string): string {
 
 function isExpired(token: string): boolean {
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return true
-    const payload = JSON.parse(decodeBase64Url(parts[1]))
-    if (!payload.exp) return false
-    // JWT exp is in seconds; Date.now() is in milliseconds
-    return Date.now() / 1000 > payload.exp
-  } catch {
-    // If we can't parse the token at all, don't delete it —
+    const parts = token.split('.');
+    let payload;
+    
+    if (parts.length === 3) {
+      // Standard 3-part JWT
+      payload = JSON.parse(decodeBase64Url(parts[1]));
+    } else {
+      // Single-part base64 token (simple JSON)
+      payload = JSON.parse(decodeBase64Url(token));
+    }
+
+    if (!payload.exp) return false;
+
+    // JWT exp is in seconds; our simple token might be in milliseconds
+    // If it's larger than a reasonable "seconds" timestamp, it's likely milliseconds
+    const now = Date.now();
+    const exp = payload.exp > 10000000000 ? payload.exp : payload.exp * 1000;
+    
+    return now > exp;
+  } catch (err) {
+    // If we can't parse the token, don't clear it — 
     // let the server decide if it's valid (avoids false evictions)
-    return false
+    console.warn('Token parsing failed in isExpired:', err);
+    return false;
   }
 }
 
