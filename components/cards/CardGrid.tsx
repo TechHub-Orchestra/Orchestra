@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { fetchWithAuth } from '@/lib/fetch-utils'
 import CardWidget from './CardWidget'
 import CardActions from './CardActions'
 import EmptyState from '@/components/shared/EmptyState'
