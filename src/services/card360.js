@@ -35,16 +35,23 @@ const real = {
 
 // Mock implementations — read/write MongoDB
 const mock = {
-  fetchCard: async ({ pan }) => {
+  fetchCard: async ({ pan, expiryDate, issuerNr, cardSequenceNr }) => {
+    // For demo: if card isn't in DB, return a successful mock response anyway
     const card = await Card.findOne({ pan })
-    if (!card) return { code: '10500', description: 'Card not found' }
+    
     return {
       code: '00', description: 'Successful',
       cardDetails: [{
-        pan: card.pan, expiryDate: card.expiryDate, issuerNr: card.issuerNr,
-        firstName: card.firstName, lastName: card.lastName,
-        nameOnCard: card.nameOnCard, cardProgram: card.cardProgram,
-        customerId: card.customerId, cardStatus: card.cardStatus, seqNr: card.seqNr
+        pan: pan, 
+        expiryDate: expiryDate || card?.expiryDate || '2612', 
+        issuerNr: card?.issuerNr || issuerNr || '000001',
+        firstName: card?.firstName || 'Demo', 
+        lastName: card?.lastName || 'User',
+        nameOnCard: card?.nameOnCard || 'DEMO USER', 
+        cardProgram: card?.cardProgram || (pan.startsWith('4') ? 'VISA' : 'VERVE'),
+        customerId: card?.customerId || 'CUST-DEMO', 
+        cardStatus: card?.cardStatus || '1', 
+        seqNr: card?.seqNr || cardSequenceNr || '01'
       }]
     }
   },
