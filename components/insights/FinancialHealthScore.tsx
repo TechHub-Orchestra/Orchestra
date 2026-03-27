@@ -1,0 +1,129 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { fetchWithAuth } from '@/lib/fetch-utils'
+
+interface HealthData {
+  financialScore: number
+  scoreLabel: string
+  summary: string
+  observations?: string[]
+}
+
+function getScoreColor(score: number) {
+  if (score >= 75) return { stroke: '#10B981', text: 'text-green-600', label: 'Excellent' }
+  if (score >= 50) return { stroke: '#F59E0B', text: 'text-amber-600', label: 'Moderate' }
+  return { stroke: '#E94560', text: 'text-red-600', label: 'Needs Attention' }
+}
+
+export default function FinancialHealthScore() {
+  const [data, setData] = useState<HealthData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [animated, setAnimated] = useState(0)
+
+  useEffect(() => {
+    fetchWithAuth('/api/insights')
+      .then(r => r.json())
+      .then(d => {
+        const score = d.insights?.financialScore ?? d.financialScore ?? 72
+        const scoreLabel = d.insights?.scoreLabel ?? ''
+        const summary = d.insights?.summary ?? ''
+        const observations = d.insights?.insights ?? []
+        setData({ financialScore: score, scoreLabel, summary, observations })
+        setLoading(false)
+        // Animate the gauge
+        let start = 0
+        const step = score / 60
+        const timer = setInterval(() => {
+          start += step
+          if (start >= score) { setAnimated(score); clearInterval(timer) }
+          else setAnimated(Math.floor(start))
+        }, 16)
+        return () => clearInterval(timer)
+      })
+      .catch(() => {
+        setData({ financialScore: 72, scoreLabel: 'Good', summary: 'Your finances are on track.', observations: [] })
+        setAnimated(72)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl border p-6 animate-pulse">
+        <div className="w-40 h-40 bg-gray-200 rounded-full mx-auto mb-4" />
+        <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto" />
+      </div>
+    )
+  }
+
+  const score = data?.financialScore ?? 0
+  const color = getScoreColor(score)
+
+  // SVG circle gauge constants
+  const radius = 60
+  const circumference = 2 * Math.PI * radius
+  const progress = ((100 - animated) / 100) * circumference
+
+  return (
+    <div className="bg-white rounded-2xl border p-6">
+      <h3 className="font-bold text-[#1A1A2E] mb-5 flex items-center gap-2">
+        <span className="text-lg">💡</span> Financial Health Score
+      </h3>
+
+      {/* Circular Gauge */}
+      <div className="flex flex-col items-center mb-6">
+        <svg width="160" height="160" className="-rotate-90">
+          {/* Background track */}
+          <circle
+            cx="80" cy="80" r={radius}
+            fill="none"
+            stroke="#F3F4F6"
+            strokeWidth="12"
+          />
+          {/* Animated progress arc */}
+          <circle
+            cx="80" cy="80" r={radius}
+            fill="none"
+            stroke={color.stroke}
+            strokeWidth="12"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={progress}
+            style={{ transition: 'stroke-dashoffset 0.05s linear' }}
+          />
+        </svg>
+        {/* Score number in centre */}
+        <div className="-mt-[100px] flex flex-col items-center mb-4">
+          <span className={`text-4xl font-black ${color.text}`}>{animated}</span>
+          <span className="text-xs text-gray-400 font-medium">/ 100</span>
+        </div>
+        <div className="mt-4">
+          <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+            score >= 75 ? 'bg-green-100 text-green-700' :
+            score >= 50 ? 'bg-amber-100 text-amber-700' :
+            'bg-red-100 text-red-700'
+          }`}>
+            {color.label}
+          </span>
+        </div>
+      </div>
+
+      {/* Summary */}
+      {data?.summary && (
+        <p className="text-sm text-gray-600 text-center mb-4 leading-relaxed">{data.summary}</p>
+      )}
+
+      {/* Observations */}
+      {data?.observations && data.observations.length > 0 && (
+        <div className="space-y-2 border-t pt-4 mt-2">
+          {data.observations.slice(0, 3).map((obs, i) => (
+            <div key={i} className="flex gap-2 text-xs text-gray-600">
+              <span className={`mt-0.5 shrink-0 ${color.text}`}>●</span>
+              {obs}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}

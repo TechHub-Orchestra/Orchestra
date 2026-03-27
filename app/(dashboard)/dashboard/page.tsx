@@ -6,6 +6,14 @@ import SpendingChart from '@/components/dashboard/SpendingChart'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { fetchWithAuth } from '@/lib/fetch-utils'
 
+interface Transaction {
+  _id: string
+  merchant: string
+  category: string
+  amount: number
+  date: string
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalCards: 3,
@@ -14,6 +22,8 @@ export default function DashboardPage() {
     savedThisMonth: 85000,
   })
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [recentTx, setRecentTx] = useState<Transaction[]>([])
+  const [txLoading, setTxLoading] = useState(true)
 
   useEffect(() => {
     const done = localStorage.getItem('orchestra_onboarded')
@@ -36,6 +46,30 @@ export default function DashboardPage() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    fetchWithAuth('/api/transactions?limit=5')
+      .then(r => r.json())
+      .then(d => {
+        setRecentTx(d.transactions || d.data || [])
+        setTxLoading(false)
+      })
+      .catch(() => setTxLoading(false))
+  }, [])
+
+  function formatTxAmount(amount: number) {
+    const abs = Math.abs(amount / 100)
+    const sign = amount >= 0 ? '+' : '-'
+    return `${sign}₦${abs.toLocaleString('en-NG', { minimumFractionDigits: 2 })}`
+  }
+
+  function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const h = Math.floor(diff / 3600000)
+    if (h < 24) return `${h}h ago`
+    const d = Math.floor(h / 24)
+    return `${d}d ago`
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       {showOnboarding && (
@@ -52,30 +86,41 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SpendingChart />
 
-        {/* Recent activity placeholder */}
         <div className="bg-white rounded-2xl border p-6">
           <h3 className="font-bold text-[#1A1A2E] mb-4">Recent Transactions</h3>
-          <div className="space-y-3">
-            {[
-              { merchant: 'Shoprite', amount: -1520000, category: 'shopping', time: '2h ago' },
-              { merchant: 'Netflix', amount: -370000, category: 'subscriptions', time: '1d ago' },
-              { merchant: 'Uber Nigeria', amount: -450000, category: 'transport', time: '2d ago' },
-              { merchant: 'Salary Credit', amount: 85000000, category: 'income', time: '5d ago' },
-            ].map((tx, i) => (
-              <div key={i} className="flex items-center gap-3 py-2 border-b last:border-0">
-                <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 flex-shrink-0">
-                  {tx.merchant[0]}
+          {txLoading ? (
+            <div className="space-y-3 animate-pulse">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <div className="w-9 h-9 rounded-xl bg-gray-200 shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    <div className="h-2.5 bg-gray-100 rounded w-1/3" />
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded w-16" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-[#1A1A2E] truncate">{tx.merchant}</p>
-                  <p className="text-xs text-gray-400 capitalize">{tx.category} · {tx.time}</p>
+              ))}
+            </div>
+          ) : recentTx.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-8">No recent transactions</p>
+          ) : (
+            <div className="space-y-1">
+              {recentTx.map((tx, i) => (
+                <div key={tx._id || i} className="flex items-center gap-3 py-2.5 border-b last:border-0">
+                  <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0">
+                    {tx.merchant?.[0] ?? '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-[#1A1A2E] truncate">{tx.merchant}</p>
+                    <p className="text-xs text-gray-400 capitalize">{tx.category} · {timeAgo(tx.date)}</p>
+                  </div>
+                  <p className={`font-semibold text-sm shrink-0 ${tx.amount >= 0 ? 'text-green-600' : 'text-[#1A1A2E]'}`}>
+                    {formatTxAmount(tx.amount)}
+                  </p>
                 </div>
-                <p className={`font-semibold text-sm ${tx.amount > 0 ? 'text-green-600' : 'text-[#1A1A2E]'}`}>
-                  {tx.amount > 0 ? '+' : ''}₦{Math.abs(tx.amount / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

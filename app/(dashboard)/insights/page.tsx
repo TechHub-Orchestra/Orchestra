@@ -5,6 +5,7 @@ import SpendingBreakdown from '@/components/insights/SpendingBreakdown'
 import SavingsCalculator from '@/components/insights/SavingsCalculator'
 import AnomalyFeed from '@/components/insights/AnomalyFeed'
 import RecommendationCard from '@/components/insights/RecommendationCard'
+import FinancialHealthScore from '@/components/insights/FinancialHealthScore'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import toast from 'react-hot-toast'
 import { fetchWithAuth } from '@/lib/fetch-utils'
@@ -81,7 +82,10 @@ export default function InsightsPage() {
       ) : (
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+            <div>
+              <FinancialHealthScore />
+            </div>
+            <div className="lg:col-span-1">
               <AIInsightsPanel />
             </div>
             <div className="bg-white rounded-2xl border p-5 h-fit">
