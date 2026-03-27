@@ -39,37 +39,16 @@ export default function DashboardPage() {
     Promise.all([
       fetchWithAuth('/api/cards').then(r => r.json()),
       fetchWithAuth('/api/virtual-cards').then(r => r.json()),
-      fetchWithAuth('/api/transactions?limit=200').then(r => r.json()),
+      fetchWithAuth('/api/transactions/summary').then(r => r.json()),
       fetchWithAuth('/api/insights').then(r => r.json())
     ])
-      .then(([cardsData, vcData, txData, insightsData]) => {
+      .then(([cardsData, vcData, summaryData, insightsData]) => {
         
-        let monthlySpend = 0;
-        const transactions = Array.isArray(txData?.transactions) ? txData.transactions : [];
-        
-        if (transactions.length > 0) {
-          // Calculate monthly spend from transactions in the current month
-          const now = new Date();
-          const currentMonth = now.getMonth();
-          const currentYear = now.getFullYear();
-
-          monthlySpend = transactions.reduce((acc: number, tx: any) => {
-            const dateStr = tx.transactionDate || tx.date;
-            if (!dateStr) return acc;
-
-            const txDate = new Date(dateStr);
-            // Check if transaction is a debit and from the current month
-            if (tx.amount < 0 && txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
-              return acc + Math.abs(tx.amount);
-            }
-            return acc;
-          }, 0);
-        }
-
         setStats({
           totalCards: Array.isArray(cardsData?.cards) ? cardsData.cards.length : 0,
           virtualCards: Array.isArray(vcData?.virtualCards) ? vcData.virtualCards.length : (Array.isArray(vcData?.cards) ? vcData.cards.length : 0),
-          monthlySpend: monthlySpend / 100, // Convert Kobo/cents to Naira
+          // API returns summary.totalSpent in kobo
+          monthlySpend: (summaryData?.summary?.totalSpent ?? 0) / 100, 
           // Use insight savings if available, else 0
           savedThisMonth: insightsData?.insights?.savingsOpportunity || 0,
         })
