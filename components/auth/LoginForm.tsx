@@ -70,8 +70,8 @@ export default function LoginForm() {
         onClick={() => {
           const form = document.getElementById('login-email') as HTMLInputElement
           const pass = document.getElementById('login-password') as HTMLInputElement
-          if (form) form.value = 'demo@orchestra.ng'
-          if (pass) pass.value = 'demo1234'
+          if (form) form.value = 'alice@example.com'
+          if (pass) pass.value = ' Password123!'
         }}
         className="w-full text-sm text-gray-400 hover:text-[#E94560] transition"
       >
