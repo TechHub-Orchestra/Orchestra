@@ -71,7 +71,7 @@ export default function LoginForm() {
           const form = document.getElementById('login-email') as HTMLInputElement
           const pass = document.getElementById('login-password') as HTMLInputElement
           if (form) form.value = 'alice@example.com'
-          if (pass) pass.value = ' Password123!'
+          if (pass) pass.value = 'Password123!'
         }}
         className="w-full text-sm text-gray-400 hover:text-[#E94560] transition"
       >
