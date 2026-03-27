@@ -1,6 +1,9 @@
 import BusinessCard from '../db/models/BusinessCard.js'
 import ApprovalRequest from '../db/models/ApprovalRequest.js'
 import Transaction from '../db/models/Transaction.js'
+import RoutingRule from '../db/models/RoutingRule.js'
+import Card from '../db/models/Card.js'
+import CardBalance from '../db/models/CardBalance.js'
 
 export async function getBusinessCards(req, res) {
   const cards = await BusinessCard.find({ businessUserId: req.user._id })
@@ -76,6 +79,21 @@ export async function handleApproval(req, res) {
     card.amountSpent += request.amount
     if (card.amountSpent >= card.budget) card.status = 'exhausted'
     await card.save()
+
+    // Deduct from business user's primary card balance to maintain demo consistency
+    const rule = await RoutingRule.findOne({ userId: req.user._id })
+    const primaryCardId = rule?.primaryCardId || await Card.findOne({ userId: req.user._id, isDefault: true }).then(c => c?._id)
+    
+    if (primaryCardId) {
+      const pCard = await Card.findById(primaryCardId)
+      if (pCard) {
+        await CardBalance.findOneAndUpdate(
+          { pan: pCard.pan },
+          { $inc: { availableBalance: -request.amount, ledgerBalance: -request.amount }, $set: { fetchedAt: new Date() } },
+          { sort: { fetchedAt: -1 } }
+        )
+      }
+    }
 
     await Transaction.create({
       userId:          req.user._id,

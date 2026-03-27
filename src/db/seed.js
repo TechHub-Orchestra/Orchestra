@@ -176,14 +176,24 @@ const bCard = await BusinessCard.create({
   expiresAt: new Date(Date.now() + 60 * 86400000)
 })
 
-await ApprovalRequest.create({
-  businessCardId: bCard._id,
-  requestedBy:    'Emeka Okafor',
-  amount:         4500000,   // ₦45,000 in kobo
-  merchant:       'Air Peace',
-  reason:         'Flight to Abuja for Q1 sales meeting',
-  status:         'pending'
-})
+await ApprovalRequest.create([
+  {
+    businessCardId: bCard._id,
+    requestedBy:    'Emeka Okafor',
+    amount:         4500000,   // ₦45,000 in kobo
+    merchant:       'Air Peace',
+    reason:         'Flight to Abuja for Q1 sales meeting',
+    status:         'pending'
+  },
+  {
+    businessCardId: bCard._id,
+    requestedBy:    'Janet Sule',
+    amount:         1250000,   // ₦12,500 in kobo
+    merchant:       'Uber Nigeria',
+    reason:         'Late night transport for project deployment',
+    status:         'pending'
+  }
+])
 
 // ── AI Insights ───────────────────────────────────────────────────────────────
 await Insight.create({
