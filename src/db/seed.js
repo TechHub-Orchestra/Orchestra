@@ -19,6 +19,7 @@ import BusinessCard from './models/BusinessCard.js'
 import ApprovalRequest from './models/ApprovalRequest.js'
 import Transfer from './models/Transfer.js'
 import BillPayment from './models/BillPayment.js'
+import Insight from './models/Insight.js'
 
 await connectDB()
 
@@ -34,12 +35,13 @@ await Promise.all([
   ApprovalRequest.deleteMany({}),
   Transfer.deleteMany({}),
   BillPayment.deleteMany({}),
+  Insight.deleteMany({}),
 ])
 console.log('🗑  Cleared existing data')
 
 // ── Users ────────────────────────────────────────────────────────────────────
 const [alice, bob] = await User.create([
-  { name: 'Alice Okonkwo',  email: 'alice@example.com', password: 'Password123!', role: 'individual' },
+  { name: 'Alice Okonkwo',  email: 'alice@example.com', password: 'Password123!', role: 'business', businessName: 'Okonkwo Tech LLC' },
   { name: 'Bob Adeyemi',    email: 'bob@example.com',   password: 'Password123!', role: 'business',
     businessName: 'Adeyemi Logistics Ltd' },
 ])
@@ -81,19 +83,25 @@ await RoutingRule.create({
 const categories = ['food', 'transport', 'subscriptions', 'utilities', 'entertainment', 'shopping', 'other']
 const merchants  = ['Shoprite', 'Uber', 'Netflix', 'EKEDC', 'Filmhouse', 'Jumia', 'Cold Stone']
 
-const txData = Array.from({ length: 30 }, (_, i) => ({
-  pan: aliceDebit.pan,
-  cardId: aliceDebit._id,
-  userId: alice._id,
-  amount: Math.floor(Math.random() * 50_000_00) + 500_00,  // ₦500 – ₦50,500
-  currency: 'NGN',
-  merchant: merchants[i % merchants.length],
-  category: categories[i % categories.length],
-  narration: `Payment to ${merchants[i % merchants.length]}`,
-  transactionDate: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
-  reference: randomUUID(),
-  responseCode: '00',
-}))
+const txData = Array.from({ length: 30 }, (_, i) => {
+  const amount = Math.floor(Math.random() * 50_000_00) + 500_00
+  const isAnomaly = amount > 45_000_00 && i % 4 === 0
+  return {
+    pan: aliceDebit.pan,
+    cardId: aliceDebit._id,
+    userId: alice._id,
+    amount,
+    currency: 'NGN',
+    merchant: merchants[i % merchants.length],
+    category: categories[i % categories.length],
+    narration: `Payment to ${merchants[i % merchants.length]}`,
+    transactionDate: new Date(Date.now() - i * 24 * 60 * 60 * 1000),
+    reference: randomUUID(),
+    responseCode: '00',
+    isAnomaly,
+    anomalyReason: isAnomaly ? 'High value transaction outside normal spending patterns' : undefined,
+  }
+})
 
 await Transaction.insertMany(txData)
 
@@ -124,7 +132,7 @@ await VirtualCard.insertMany([
 
 // ── Business Cards & Approvals ────────────────────────────────────────────────
 const bCard = await BusinessCard.create({
-  businessUserId: bob._id,
+  businessUserId: alice._id,
   assignedTo: 'Emeka Okafor',
   purpose: 'Q1 Field Sales Trip',
   budget: 15000000,          // ₦150,000 in kobo
@@ -142,6 +150,35 @@ await ApprovalRequest.create({
   merchant:       'Air Peace',
   reason:         'Flight to Abuja for Q1 sales meeting',
   status:         'pending'
+})
+
+// ── AI Insights ───────────────────────────────────────────────────────────────
+await Insight.create({
+  userId: alice._id,
+  summary: "Your financial health is stable. You have kept subscriptions low, but shopping and transport expenses are trending upwards.",
+  insights: [
+    "Your highest spending category this month is Shopping.",
+    "You have successfully avoided non-essential subscription renewals this month.",
+    "A recent high-value transaction was flagged as a potential anomaly."
+  ],
+  recommendations: [
+    "Consider setting a strict budget limit for weekend shopping.",
+    "Top up your investment wallet using your surplus ledger balance.",
+    "Review your recent flagged anomalies to confirm they were authorized."
+  ],
+  anomalies: ["Some transactions exceeded your typical spend limit for their categories."],
+  savingsOpportunity: 15000,
+  byCategory: {
+    food: 4500000,
+    transport: 2000000,
+    subscriptions: 500000,
+    utilities: 1500000,
+    entertainment: 3500000,
+    shopping: 6000000,
+    other: 1000000
+  },
+  totalSpent: 19000000,
+  financialScore: 82
 })
 
 // ── Transfers & Bills ────────────────────────────────────────────────────────
