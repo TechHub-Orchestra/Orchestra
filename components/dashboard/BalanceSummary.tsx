@@ -73,58 +73,81 @@ export default function BalanceSummary() {
           </Link>
         </div>
 
-        {/* Bank List with Account Numbers */}
-        <div className="relative z-10 mt-8 pt-6 border-t border-white/10">
-          <div className="flex flex-wrap gap-4">
-            {data?.cards?.slice(0, 3).map((card: any) => (
-              <div key={card._id} className="flex flex-col gap-1">
-                <p className="text-[10px] font-black text-white/40 uppercase tracking-tighter">{card.bank}</p>
-                <button 
-                  onClick={() => copyToClipboard(card.accountNumber || '0123456789', card._id)}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors group"
-                >
-                  <span className="text-xs font-mono font-bold text-white/90">
-                    {card.accountNumber || '0123456789'}
-                  </span>
-                  {copying === card._id ? <Check size={12} className="text-green-400" /> : <Copy size={12} className="text-white/30 group-hover:text-white/60" />}
-                </button>
-              </div>
-            ))}
-            {data?.cards && data.cards.length > 3 && (
-              <Link href="/cards" className="text-[10px] font-black text-[#E94560] uppercase self-end mb-1 hover:underline">
-                +{data.cards.length - 3} More
-              </Link>
-            )}
-          </div>
-          
+        <div className="relative z-10 mt-8">
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Multi-Bank Orchestration Active</p>
+        </div>
+      </div>
+      
+      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col h-full min-h-[240px]">
+        <div className="p-6 border-b flex items-center justify-between bg-gray-50/50">
+          <h3 className="font-bold text-[#1A1A2E] text-sm flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            Connected Accounts
+          </h3>
           <button 
             onClick={fetchData}
-            className="absolute bottom-0 right-0 p-2 text-white/30 hover:text-white transition-colors"
-            title="Refresh Balance"
+            className="p-2 text-gray-400 hover:text-[#E94560] transition-colors rounded-xl hover:bg-white"
+            title="Refresh Balances"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-      </div>
-      
-      <div className="flex flex-col md:col-span-1">
-        <div className="h-full flex flex-col">
-          <div className="flex-1 flex items-center">
-            <CardWidget 
-              card={{
-                _id: 'ultimate_summary',
-                cardStatus: '1',
-                isUltimate: true,
-                label: 'Orchestra Ultimate',
-                nameOnCard: user?.name || 'ORCHESTRA USER',
-                pan: '4000123456789010',
-                expiryDate: '1299'
-              }}
-              hideBalance={true}
-              hideActions={true}
-              showRevealOnly={true}
-            />
-          </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+          {data?.cards && data.cards.length > 0 ? (
+            data.cards.map((card: any) => (
+              <div key={card._id} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-transparent hover:border-gray-200 transition-all group">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white border flex items-center justify-center text-[10px] font-black text-gray-400 shadow-sm">
+                    {card.bank?.slice(0, 3).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#1A1A2E]">{card.bank}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] font-mono text-gray-500">{card.accountNumber || '0123456789'}</span>
+                      <button 
+                        onClick={() => copyToClipboard(card.accountNumber || '0123456789', card._id)}
+                        className="text-gray-300 hover:text-[#E94560] transition-colors"
+                      >
+                        {copying === card._id ? <Check size={10} className="text-green-500" /> : <Copy size={10} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-black text-[#E94560]">{toNaira(card.availableBalance)}</p>
+                  <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">Live</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6">
+              <p className="text-xs text-gray-400 font-medium">No accounts connected yet</p>
+              <Link href="/cards" className="text-[10px] font-black text-[#E94560] uppercase mt-2 hover:underline">Link a Card</Link>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 bg-gray-50/50 border-t">
+          <button 
+            onClick={() => {
+              const firstCard = data?.cards?.[0];
+              if (firstCard) {
+                toast.promise(
+                  fetchWithAuth(`/api/cards/${firstCard._id}/balance`).then(r => r.json()),
+                  {
+                    loading: 'Fetching live balance...',
+                    success: 'Balances updated',
+                    error: 'Sync failed'
+                  }
+                ).then(() => fetchData())
+              }
+            }}
+            className="w-full py-2.5 rounded-xl bg-[#1A1A2E] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#252545] transition-all flex items-center justify-center gap-2"
+          >
+            <RefreshCw size={12} />
+            Check All Card Balances
+          </button>
         </div>
       </div>
     </div>

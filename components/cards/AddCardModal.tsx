@@ -33,7 +33,9 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
     cardProgram: 'VERVE',
     issuerNr: '',
     cardSequenceNr: '',
-    cardType: 'debit'
+    cardType: 'debit',
+    accountNumber: '',
+    spendLimit: ''
   })
 
   if (!open) return null
@@ -46,11 +48,17 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
     e.preventDefault()
     setLoading(true)
     try {
+      const payload = {
+        ...form,
+        color: selectedColor,
+        spendLimit: form.spendLimit ? parseFloat(form.spendLimit) : undefined
+      }
+
       // Backend expects expiryDate in YYMM format (e.g., '2612')
       const res = await fetchWithAuth('/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, color: selectedColor }),
+        body: JSON.stringify(payload),
       })
       
       const data = await res.json()
@@ -126,6 +134,11 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
           <div className="grid grid-cols-2 gap-3">
             <InputField label="Issuer Nr" name="issuerNr" value={form.issuerNr} onChange={v => updateField('issuerNr', v)} placeholder="e.g. 123" />
             <InputField label="Sequence Nr" name="cardSequenceNr" value={form.cardSequenceNr} onChange={v => updateField('cardSequenceNr', v)} placeholder="e.g. 01" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <InputField label="Account Number (10 digits)" name="accountNumber" value={form.accountNumber} onChange={v => updateField('accountNumber', v)} placeholder="0123456789" maxLength={10} />
+            <InputField label="Monthly Spend Limit (₦)" name="spendLimit" value={form.spendLimit} onChange={v => updateField('spendLimit', v)} placeholder="50000" />
           </div>
 
           <div>
