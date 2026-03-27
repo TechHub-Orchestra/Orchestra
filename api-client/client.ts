@@ -1,4 +1,4 @@
-const BASE_URL = 'https://orchestra-server.onrender.com';
+const BASE_URL = '';
 
 export async function apiClient<T>(
   path: string,
