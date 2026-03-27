@@ -1,8 +1,18 @@
 openapi: 3.0.0
 info:
   title: Orchestra API
-  description: Programmable ATM Card Orchestration Platform API
-  version: 1.0.0
+  description: |
+    Programmable ATM Card Orchestration Platform API.
+
+    **Authentication:** All protected endpoints require a `Bearer` JWT in the `Authorization` header.
+    Obtain a token via `POST /api/auth/login`. Revoke it via `POST /api/auth/logout`.
+
+    **Amounts:** All monetary values are stored and transmitted in **kobo** (1 NGN = 100 kobo)
+    unless explicitly noted otherwise in the field description.
+
+    **PAN Masking:** Card PANs are masked to the last 4 digits in all API responses
+    (e.g. `****-****-****-0040`). Full PANs are never returned.
+  version: 2.0.0
 servers:
   - url: http://localhost:5000
     description: Local development server
@@ -15,30 +25,54 @@ components:
       bearerFormat: JWT
 
   schemas:
-    User:
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    AuthResponse:
       type: object
       properties:
-        _id: { type: string }
-        name: { type: string }
-        email: { type: string }
-        role: { type: string, enum: [individual, business] }
-        businessName: { type: string }
-        createdAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time }
+        token: { type: string, description: JWT access token }
+        user:
+          type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+            email: { type: string }
+            role: { type: string, enum: [individual, business] }
 
+    # ── Cards ─────────────────────────────────────────────────────────────────
     Card:
       type: object
       properties:
         _id: { type: string }
-        pan: { type: string }
-        expiryDate: { type: string }
+        pan: { type: string, example: '****-****-****-0040', description: Masked to last 4 digits }
+        expiryDate: { type: string, example: '2612', description: YYMM format }
         issuerNr: { type: string }
-        cardStatus: { type: string }
-        cardType: { type: string, enum: [debit, prepaid, virtual] }
+        firstName: { type: string }
+        lastName: { type: string }
+        nameOnCard: { type: string }
+        cardProgram: { type: string, enum: [VERVE, VISA, MASTERCARD] }
+        customerId: { type: string }
+        cardStatus: { type: string, enum: ['0', '1', '2'], description: '0=inactive 1=active 2=blocked' }
+        seqNr: { type: string }
+        cardType: { type: string, enum: [debit, prepaid] }
         label: { type: string }
+        bank: { type: string }
+        color: { type: string, example: '#FF6B35' }
         isDefault: { type: boolean }
-        spendLimit: { type: number }
+        spendLimit: { type: number, description: In kobo }
+        availableBalance: { type: number, description: In kobo — from Card360 (cached 5 min) }
+        ledgerBalance: { type: number, description: In kobo }
+        currency: { type: string, example: NGN }
 
+    CardBalance:
+      type: object
+      properties:
+        pan: { type: string }
+        availableBalance: { type: number, description: In kobo }
+        ledgerBalance: { type: number, description: In kobo }
+        currency: { type: string }
+        fetchedAt: { type: string, format: date-time, description: Auto-expires after 5 minutes via TTL index }
+
+    # ── Virtual Cards ─────────────────────────────────────────────────────────
     VirtualCard:
       type: object
       properties:
@@ -47,13 +81,14 @@ components:
         parentCardId: { type: string }
         label: { type: string }
         merchant: { type: string }
-        spendLimit: { type: number }
-        amountSpent: { type: number }
+        spendLimit: { type: number, description: In kobo }
+        amountSpent: { type: number, description: In kobo }
         autoRenew: { type: boolean }
         paused: { type: boolean }
         pan: { type: string }
         expiryDate: { type: string }
 
+    # ── Business Cards ────────────────────────────────────────────────────────
     BusinessCard:
       type: object
       properties:
@@ -61,16 +96,18 @@ components:
         businessUserId: { type: string }
         assignedTo: { type: string }
         purpose: { type: string }
-        budget: { type: number }
-        amountSpent: { type: number }
+        budget: { type: number, description: In kobo }
+        amountSpent: { type: number, description: In kobo }
         merchantCategories:
           type: array
           items: { type: string }
         expiresAt: { type: string, format: date-time }
         status: { type: string, enum: [active, suspended, exhausted] }
-        approvalThreshold: { type: number }
+        approvalThreshold: { type: number, description: In kobo — transactions above this need approval }
         pan: { type: string }
+        pendingApprovals: { type: integer, description: Count of pending approval requests }
 
+    # ── Transactions ──────────────────────────────────────────────────────────
     Transaction:
       type: object
       properties:
@@ -78,14 +115,22 @@ components:
         pan: { type: string }
         cardId: { type: string }
         userId: { type: string }
-        amount: { type: number }
-        currency: { type: string }
+        amount: { type: number, description: In kobo }
+        currency: { type: string, default: NGN }
         merchant: { type: string }
-        category: { type: string }
+        category:
+          type: string
+          enum: [food, transport, subscriptions, utilities, entertainment, shopping, other]
+        narration: { type: string }
         transactionDate: { type: string, format: date-time }
+        reference: { type: string }
         isAnomaly: { type: boolean }
         anomalyReason: { type: string }
+        simulatedSplit:
+          type: boolean
+          description: True if this record was saved from the /routing/simulate dry-run endpoint
 
+    # ── Routing ───────────────────────────────────────────────────────────────
     RoutingRule:
       type: object
       properties:
@@ -96,13 +141,96 @@ components:
           type: array
           items: { type: string }
 
+    SimulationStep:
+      type: object
+      properties:
+        step: { type: integer }
+        cardLabel: { type: string }
+        bank: { type: string }
+        cardProgram: { type: string }
+        charged: { type: number, description: Amount charged to this card in kobo }
+        remaining: { type: number, description: Remaining balance on this card after charge in kobo }
+
+    SimulationResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        mode: { type: string, enum: [primary, balanced, auto-split] }
+        totalCharged: { type: number, description: In kobo }
+        merchant: { type: string }
+        category: { type: string }
+        steps:
+          type: array
+          items: { $ref: '#/components/schemas/SimulationStep' }
+        anomaly:
+          type: object
+          nullable: true
+          properties:
+            flagged: { type: boolean }
+            severity: { type: string, enum: [medium, high] }
+            reasons:
+              type: array
+              items: { type: string }
+
+    # ── Insights ──────────────────────────────────────────────────────────────
+    Insight:
+      type: object
+      properties:
+        _id: { type: string }
+        userId: { type: string }
+        summary: { type: string, description: 2-sentence financial health overview }
+        insights:
+          type: array
+          items: { type: string }
+          description: 3 specific spending pattern observations
+        recommendations:
+          type: array
+          items: { type: string }
+          description: 3 actionable improvement tips
+        anomalies:
+          type: array
+          items: { type: string }
+        savingsOpportunity: { type: number, description: Estimated monthly savings in NGN }
+        financialScore:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Overall financial health score (0 = poor, 100 = excellent)
+        byCategory: { type: object, additionalProperties: { type: number } }
+        totalSpent: { type: number, description: Total spend over last 30 days in kobo }
+        generatedAt: { type: string, format: date-time }
+        fromCache: { type: boolean, description: True if returned from 24-hour cache }
+
+    # ── Error ─────────────────────────────────────────────────────────────────
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        requestId: { type: string, description: Correlation ID — include this when reporting bugs }
+
+    ValidationError:
+      type: object
+      properties:
+        error: { type: string, example: Validation failed }
+        requestId: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+
 security:
   - bearerAuth: []
 
 paths:
+  # ── Auth ────────────────────────────────────────────────────────────────────
   /api/auth/register:
     post:
       summary: Register a new user
+      description: |
+        Creates a new user account. `businessName` is **required** when `role` is `business`.
       tags: [Auth]
       security: []
       requestBody:
@@ -113,18 +241,38 @@ paths:
               type: object
               required: [name, email, password]
               properties:
-                name: { type: string }
+                name: { type: string, minLength: 2 }
                 email: { type: string, format: email }
                 password: { type: string, minLength: 8 }
-                role: { type: string, enum: [individual, business] }
-                businessName: { type: string }
+                role: { type: string, enum: [individual, business], default: individual }
+                businessName:
+                  type: string
+                  description: Required when role is "business"
+            examples:
+              individual:
+                value: { name: Alice Okonkwo, email: alice@example.com, password: Password123!, role: individual }
+              business:
+                value: { name: Bob Adeyemi, email: bob@example.com, password: Password123!, role: business, businessName: Adeyemi Logistics Ltd }
       responses:
-        '201': { description: User registered successfully }
-        '400': { description: Validation error }
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400':
+          description: Validation error (e.g. businessName missing for business role)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ValidationError' }
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /api/auth/login:
     post:
-      summary: Login user
+      summary: Login and receive a JWT
       tags: [Auth]
       security: []
       requestBody:
@@ -138,93 +286,214 @@ paths:
                 email: { type: string, format: email }
                 password: { type: string }
       responses:
-        '200': { description: Successful login }
-        '401': { description: Invalid credentials }
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /api/auth/me:
     get:
-      summary: Get current authenticated user
+      summary: Get the current authenticated user
       tags: [Auth]
       responses:
-        '200': { description: User profile returned }
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/AuthResponse/properties/user' }
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
+  /api/auth/logout:
+    post:
+      summary: Logout and invalidate the current JWT
+      description: |
+        Adds the current token to a server-side blocklist. The token is immediately
+        rejected by the `protect` middleware on all subsequent requests, even before
+        its natural expiry. The blocklist entry auto-expires when the JWT would have
+        expired anyway (TTL index), so storage stays bounded.
+      tags: [Auth]
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Logged out successfully }
+        '401':
+          description: Token missing, invalid, or already revoked
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ── Cards ────────────────────────────────────────────────────────────────────
   /api/cards:
     get:
-      summary: Get all cards for the user
+      summary: List all cards for the authenticated user
+      description: |
+        Returns all linked cards with live balance data. Balances are served from a
+        5-minute MongoDB cache to avoid redundant Card360 API calls. A fresh fetch
+        is only made when no valid cached balance exists.
       tags: [Cards]
       responses:
-        '200': { description: List of cards }
+        '200':
+          description: Array of cards with masked PAN and balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items: { $ref: '#/components/schemas/Card' }
     post:
-      summary: Add a new physical card
+      summary: Add a new physical card via Card360 verification
       tags: [Cards]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Card'
+              type: object
+              required: [pan, expiryDate, issuerNr, cardType]
+              properties:
+                pan: { type: string, minLength: 13, maxLength: 19 }
+                expiryDate: { type: string, pattern: '^\d{4}$', example: '2612' }
+                issuerNr: { type: string }
+                cardSequenceNr: { type: string }
+                cardType: { type: string, enum: [debit, prepaid] }
+                label: { type: string }
+                bank: { type: string }
+                color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$', example: '#FF6B35' }
       responses:
-        '201': { description: Card created }
+        '201':
+          description: Card added and verified via Card360
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  card: { $ref: '#/components/schemas/Card' }
+        '400':
+          description: Card not found or invalid details on Card360
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /api/cards/{id}:
     get:
-      summary: Get a specific card
+      summary: Get a specific card (PAN masked)
       tags: [Cards]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+        - { in: path, name: id, required: true, schema: { type: string } }
       responses:
-        '200': { description: Card object }
+        '200':
+          description: Card object with masked PAN
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  card: { $ref: '#/components/schemas/Card' }
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
     patch:
-      summary: Update a card (Block/Unblock)
+      summary: Update card — block, unblock, or modify metadata
       tags: [Cards]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+        - { in: path, name: id, required: true, schema: { type: string } }
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                action: { type: string, enum: [block, unblock] }
+                action: { type: string, enum: [block, unblock], description: Omit for a plain metadata update }
+                label: { type: string }
+                color: { type: string }
+                isDefault: { type: boolean }
       responses:
-        '200': { description: Card updated }
+        '200':
+          description: Card updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  card: { $ref: '#/components/schemas/Card' }
+        '404':
+          description: Card not found
     delete:
-      summary: Delete a card
+      summary: Remove a card from the user's account
       tags: [Cards]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+        - { in: path, name: id, required: true, schema: { type: string } }
       responses:
-        '200': { description: Card removed }
+        '200':
+          description: Card removed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+        '404':
+          description: Card not found
 
   /api/cards/{id}/balance:
     get:
-      summary: Fetch latest live balance from Card360
+      summary: Fetch and store a fresh live balance from Card360
+      description: Always calls Card360 (bypasses cache), saves result to CardBalance collection.
       tags: [Cards]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+        - { in: path, name: id, required: true, schema: { type: string } }
       responses:
-        '200': { description: Live balance fetched }
+        '200':
+          description: Fresh balance saved and returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance: { $ref: '#/components/schemas/CardBalance' }
+        '404':
+          description: Card not found
 
+  # ── Virtual Cards ────────────────────────────────────────────────────────────
   /api/virtual-cards:
     get:
-      summary: List all virtual cards
+      summary: List all virtual cards for the user
       tags: [Virtual Cards]
       responses:
-        '200': { description: List of virtual cards }
+        '200':
+          description: Array of virtual cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  virtualCards:
+                    type: array
+                    items: { $ref: '#/components/schemas/VirtualCard' }
     post:
-      summary: Create a virtual card
+      summary: Create a virtual card linked to a physical card
       tags: [Virtual Cards]
       requestBody:
         required: true
@@ -236,21 +505,25 @@ paths:
               properties:
                 label: { type: string }
                 parentCardId: { type: string }
-                spendLimit: { type: number, description: 'In Naira' }
+                spendLimit: { type: number, description: In kobo }
                 merchant: { type: string }
                 autoRenew: { type: boolean, default: true }
       responses:
-        '201': { description: Virtual card created }
+        '201':
+          description: Virtual card created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  virtualCard: { $ref: '#/components/schemas/VirtualCard' }
 
   /api/virtual-cards/{id}:
     patch:
-      summary: Pause, resume, or delete a virtual card
+      summary: Pause, resume, or cancel a virtual card
       tags: [Virtual Cards]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+        - { in: path, name: id, required: true, schema: { type: string } }
       requestBody:
         required: true
         content:
@@ -261,16 +534,31 @@ paths:
               properties:
                 action: { type: string, enum: [pause, resume, delete] }
       responses:
-        '200': { description: Virtual card modified }
+        '200':
+          description: Virtual card updated
+        '404':
+          description: Virtual card not found
 
+  # ── Business Cards ───────────────────────────────────────────────────────────
   /api/business:
     get:
-      summary: Get all business cards and pending actions
+      summary: Get all business expense cards (business role only)
       tags: [Business Cards]
       responses:
-        '200': { description: List of business cards }
+        '200':
+          description: Array of business cards with pendingApprovals count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items: { $ref: '#/components/schemas/BusinessCard' }
+        '403':
+          description: Forbidden — business role required
     post:
-      summary: Create an employee expense card
+      summary: Create an employee expense card (business role only)
       tags: [Business Cards]
       requestBody:
         required: true
@@ -278,28 +566,37 @@ paths:
           application/json:
             schema:
               type: object
-              required: [assignedTo, budget]
+              required: [budget]
               properties:
                 assignedTo: { type: string }
                 purpose: { type: string }
-                budget: { type: number, description: 'In Naira' }
+                budget: { type: integer, description: In kobo }
                 merchantCategories:
                   type: array
                   items: { type: string }
                 expiresAt: { type: string, format: date-time }
-                approvalThreshold: { type: number, description: 'In Naira' }
+                approvalThreshold: { type: integer, description: In kobo — transactions above this need approval }
       responses:
-        '201': { description: Business card created }
+        '201':
+          description: Business card created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  businessCard: { $ref: '#/components/schemas/BusinessCard' }
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ValidationError' }
 
   /api/business/{id}:
     patch:
-      summary: Suspend or reactivate a business card
+      summary: Suspend or reactivate a business card (business role only)
       tags: [Business Cards]
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string }
+        - { in: path, name: id, required: true, schema: { type: string } }
       requestBody:
         required: true
         content:
@@ -310,11 +607,18 @@ paths:
               properties:
                 status: { type: string, enum: [active, suspended] }
       responses:
-        '200': { description: Business card status updated }
+        '200':
+          description: Business card status updated
+        '404':
+          description: Business card not found
 
   /api/business/approve:
     post:
-      summary: Approve or reject an expense request
+      summary: Approve or reject an employee expense request (business role only)
+      description: |
+        On approval, the transaction is recorded with `currency: NGN`, `category: other`,
+        and the business card PAN, and the card's `amountSpent` is updated.
+        If `amountSpent >= budget`, the card is automatically marked `exhausted`.
       tags: [Business Cards]
       requestBody:
         required: true
@@ -328,29 +632,133 @@ paths:
                 action: { type: string, enum: [approve, reject] }
                 note: { type: string }
       responses:
-        '200': { description: Request processed }
+        '200':
+          description: Request processed
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ValidationError' }
+        '403':
+          description: Forbidden — not your approval request
+        '404':
+          description: Approval request not found
 
+  # ── Routing ──────────────────────────────────────────────────────────────────
+  /api/routing:
+    get:
+      summary: Get the user's card routing rule
+      tags: [Routing]
+      responses:
+        '200':
+          description: Routing rule object (populated card references)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rule: { $ref: '#/components/schemas/RoutingRule' }
+    put:
+      summary: Create or update the routing rule
+      tags: [Routing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode]
+              properties:
+                mode: { type: string, enum: [primary, balanced, auto-split] }
+                primaryCardId: { type: string, description: Required when mode is "primary" }
+                cardOrder:
+                  type: array
+                  items: { type: string }
+                  description: Ordered list of card IDs for fallback
+      responses:
+        '200':
+          description: Routing rule updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rule: { $ref: '#/components/schemas/RoutingRule' }
+
+  /api/routing/simulate:
+    post:
+      summary: Dry-run the routing + anomaly engine
+      description: |
+        Runs the full routing and anomaly detection logic without charging any card.
+        Pass `save: true` to also persist the result as a Transaction record
+        (`simulatedSplit: true`) so the dashboard reflects the simulation.
+      tags: [Routing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: integer, description: In kobo }
+                merchant: { type: string }
+                category: { type: string, enum: [food, transport, subscriptions, utilities, entertainment, shopping, other] }
+                save:
+                  type: boolean
+                  default: false
+                  description: If true, saves the simulation as a Transaction record
+            examples:
+              dry-run:
+                value: { amount: 500000, merchant: Shoprite, category: food }
+              save-to-db:
+                value: { amount: 500000, merchant: Shoprite, category: food, save: true }
+      responses:
+        '200':
+          description: Simulation result with per-card allocation steps
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SimulationResult' }
+        '400':
+          description: Insufficient funds across all cards
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  # ── Transactions ─────────────────────────────────────────────────────────────
   /api/transactions:
     get:
-      summary: Get user transactions
+      summary: Get paginated transaction history
       tags: [Transactions]
       parameters:
-        - in: query
-          name: cardId
-          schema: { type: string }
+        - { in: query, name: cardId, schema: { type: string }, description: Filter by card ID }
         - in: query
           name: category
-          schema: { type: string }
-        - in: query
-          name: page
-          schema: { type: integer, default: 1 }
-        - in: query
-          name: limit
-          schema: { type: integer, default: 50 }
+          schema: { type: string, enum: [food, transport, subscriptions, utilities, entertainment, shopping, other] }
+        - { in: query, name: from, schema: { type: string, format: date-time }, description: Start date filter }
+        - { in: query, name: to, schema: { type: string, format: date-time }, description: End date filter }
+        - { in: query, name: page, schema: { type: integer, default: 1 } }
+        - { in: query, name: limit, schema: { type: integer, default: 50 } }
       responses:
-        '200': { description: Paginated transaction list }
+        '200':
+          description: Paginated transaction list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactions:
+                    type: array
+                    items: { $ref: '#/components/schemas/Transaction' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
     post:
-      summary: Create a transaction using routing engine
+      summary: Create a transaction via the routing engine
+      description: |
+        If `cardId` is provided, that card is charged directly.
+        Otherwise, the routing engine picks the card(s) based on the user's rule.
+        Anomaly detection runs automatically and flags are saved on the record.
       tags: [Transactions]
       requestBody:
         required: true
@@ -360,65 +768,86 @@ paths:
               type: object
               required: [amount]
               properties:
-                amount: { type: number, description: Amount in kobo }
+                amount: { type: integer, description: In kobo }
                 merchant: { type: string }
-                category: { type: string }
-                cardId: { type: string, description: Optional forced card override }
+                merchantCategory: { type: string }
+                category: { type: string, enum: [food, transport, subscriptions, utilities, entertainment, shopping, other] }
+                narration: { type: string }
+                transactionDate: { type: string, format: date-time }
+                cardId: { type: string, description: Optional — bypasses routing engine }
       responses:
-        '201': { description: Transaction created successfully }
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction: { $ref: '#/components/schemas/Transaction' }
+        '400':
+          description: Routing failed (insufficient funds) or validation error
 
-  /api/routing:
+  /api/transactions/{id}:
     get:
-      summary: Get user routing rule
-      tags: [Routing]
+      summary: Get a single transaction
+      tags: [Transactions]
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
       responses:
-        '200': { description: Routing rule object }
-    put:
-      summary: Upsert user routing rule
-      tags: [Routing]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RoutingRule'
-      responses:
-        '200': { description: Routing rule updated }
+        '200':
+          description: Transaction object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction: { $ref: '#/components/schemas/Transaction' }
+        '404':
+          description: Transaction not found
 
-  /api/routing/simulate:
-    post:
-      summary: Simulate routing + anomaly engine logic
-      tags: [Routing]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                amount: { type: number, description: 'In Naira (e.g. 5000 for N5000)' }
-                merchant: { type: string }
-                category: { type: string }
-      responses:
-        '200': { description: Simulation result }
-
+  # ── Anomalies ────────────────────────────────────────────────────────────────
   /api/anomalies:
     get:
-      summary: Get all flagged anomalies
+      summary: Get all flagged anomalous transactions
+      description: Returns transactions where `isAnomaly: true`, sorted newest first.
       tags: [Anomalies]
       responses:
-        '200': { description: List of anomalous transactions }
+        '200':
+          description: List of anomalous transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  anomalies:
+                    type: array
+                    items: { $ref: '#/components/schemas/Transaction' }
 
+  # ── Insights ─────────────────────────────────────────────────────────────────
   /api/insights:
     get:
-      summary: Get cached AI financial advisor analysis
+      summary: Get AI-generated financial insights
+      description: |
+        Returns a cached Insight document if one was generated within the last 24 hours.
+        Otherwise, computes a 30-day spending summary and calls OpenAI `gpt-4o-mini`
+        to produce insights, recommendations, anomaly observations, a savings estimate,
+        and a **financial health score** (0–100).
       tags: [Insights]
       responses:
-        '200': { description: Insight object generated by OpenAI }
+        '200':
+          description: Insight object (may be from cache)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  insights: { $ref: '#/components/schemas/Insight' }
+                  fromCache: { type: boolean }
 
   /api/insights/savings:
     post:
-      summary: What-if savings calculator
+      summary: What-if savings projection calculator
+      description: Applies category spend multipliers to project future savings.
       tags: [Insights]
       requestBody:
         required: true
@@ -429,18 +858,38 @@ paths:
               properties:
                 adjustments:
                   type: object
-                  additionalProperties: { type: number }
-                  description: 'Multiplier map e.g. {"food": 0.8, "subscriptions": 0.5}'
+                  additionalProperties: { type: number, minimum: 0, maximum: 1 }
+                  description: 'Multiplier per category — e.g. {"food": 0.8} means 20% reduction in food spend'
+            example:
+              adjustments: { food: 0.8, subscriptions: 0.5 }
       responses:
-        '200': { description: Savings projection object }
+        '200':
+          description: Savings projection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currentMonthly: { type: number, description: In kobo }
+                  projectedMonthly: { type: number, description: In kobo }
+                  monthlySavings: { type: number, description: In kobo }
+                  annualSavings: { type: number, description: In kobo }
+                  breakdown:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        current: { type: number }
+                        projected: { type: number }
+                        saving: { type: number }
 
+  # ── Report ───────────────────────────────────────────────────────────────────
   /api/report:
     get:
       summary: Full formatted spending report for export
       tags: [Report]
       parameters:
-        - in: query
-          name: days
-          schema: { type: integer, default: 30 }
+        - { in: query, name: days, schema: { type: integer, default: 30 }, description: Look-back window in days }
       responses:
-        '200': { description: Formatted financial report JSON }
+        '200':
+          description: Formatted financial report
