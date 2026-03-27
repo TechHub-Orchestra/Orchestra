@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk'
+import { getGroqClient, MODELS } from '../services/ai.js'
 import Insight from '../db/models/Insight.js'
 import { getSpendingSummary } from '../services/insights.js'
 
@@ -32,9 +32,9 @@ export async function getInsights(req, res) {
     - financialScore: number between 0-100 representing overall financial health
   `
 
-  const groq     = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  const groq     = getGroqClient()
   const response = await groq.chat.completions.create({
-    model:           'llama-3.1-70b-versatile',
+    model:           MODELS.PREMIUM,
     messages:        [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
   })

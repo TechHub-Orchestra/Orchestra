@@ -4,6 +4,8 @@ import Card from '../db/models/Card.js'
 import { resolvePayment } from '../services/routing.js'
 import { detectAnomalies } from '../services/anomaly.js'
 
+const maskPan = (pan) => pan ? `****-****-****-${pan.slice(-4)}` : null
+
 // GET /api/transactions
 export async function getTransactions(req, res) {
   const { cardId, category, from, to, limit = 50, page = 1 } = req.query
@@ -23,14 +25,20 @@ export async function getTransactions(req, res) {
     Transaction.countDocuments(filter),
   ])
 
-  res.json({ transactions, total, page: Number(page), limit: Number(limit) })
+  const masked = transactions.map(t => {
+    const obj = t.toObject()
+    return { ...obj, pan: maskPan(obj.pan) }
+  })
+
+  res.json({ transactions: masked, total, page: Number(page), limit: Number(limit) })
 }
 
 // GET /api/transactions/:id
 export async function getTransaction(req, res) {
   const tx = await Transaction.findOne({ _id: req.params.id, userId: req.user._id })
   if (!tx) return res.status(404).json({ error: 'Transaction not found' })
-  res.json({ transaction: tx })
+  const txObj = tx.toObject()
+  res.json({ transaction: { ...txObj, pan: maskPan(txObj.pan) } })
 }
 
 // POST /api/transactions
@@ -76,5 +84,6 @@ export async function createTransaction(req, res) {
     simulatedSplit: splitData,
   })
 
-  res.status(201).json({ transaction })
+  const txObj = transaction.toObject()
+  res.status(201).json({ transaction: { ...txObj, pan: maskPan(txObj.pan) } })
 }

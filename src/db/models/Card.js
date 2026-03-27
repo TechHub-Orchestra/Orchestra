@@ -19,6 +19,7 @@ const cardSchema = new mongoose.Schema({
   cardType:     { type: String, enum: ['debit', 'prepaid'], required: true },
   label:        String,
   bank:         String,
+  accountNumber:String,       // Optional NUBAN for top-ups
   color:        String,       // hex color for card UI rendering
   isDefault:    { type: Boolean, default: false },
   spendLimit:   Number,       // in kobo

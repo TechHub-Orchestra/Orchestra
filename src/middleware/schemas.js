@@ -38,6 +38,7 @@ export const addCardSchema = z.object({
   cardType:    z.enum(['debit', 'prepaid']),
   label:       z.string().optional(),
   bank:        z.string().optional(),
+  accountNumber: z.string().length(10, 'accountNumber must be 10 digits').optional(),
   color:       z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'color must be a hex code').optional(),
   isDefault:   z.boolean().default(false),
   spendLimit:  z.number().int().positive().optional(),
@@ -57,7 +58,7 @@ export const simulateRoutingSchema = z.object({
   amount:   z.number().int().positive('amount must be a positive integer in kobo'),
   merchant: z.string().optional(),
   category: z.enum(['food', 'transport', 'subscriptions', 'utilities',
-                    'entertainment', 'shopping', 'other']).optional(),
+                    'entertainment', 'shopping', 'transfer', 'bills', 'other']).optional(),
   save:     z.boolean().default(false),
 })
 
@@ -68,7 +69,7 @@ export const createTransactionSchema = z.object({
   merchant:        z.string().optional(),
   merchantCategory: z.string().optional(),
   category:        z.enum(['food', 'transport', 'subscriptions', 'utilities',
-                            'entertainment', 'shopping', 'other']).optional(),
+                            'entertainment', 'shopping', 'transfer', 'bills', 'other']).optional(),
   narration:       z.string().optional(),
   transactionDate: z.string().datetime().optional(),
   // Optional override — if omitted, routing engine picks the card
@@ -136,4 +137,8 @@ export const billPaymentSchema = z.object({
   billerName:   z.string().optional(),
   customerId:   z.string().min(1, 'customerId is required'),
   narration:    z.string().optional(),
+})
+
+export const chatSchema = z.object({
+  message: z.string().min(1, 'message cannot be empty'),
 })

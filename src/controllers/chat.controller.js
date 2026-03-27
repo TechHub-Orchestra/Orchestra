@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk'
+import { getGroqClient, MODELS } from '../services/ai.js'
 import Chat from '../db/models/Chat.js'
 import { getSpendingSummary } from '../services/insights.js'
 
@@ -47,9 +47,9 @@ export async function handleChat(req, res) {
   ]
 
   // 5. Call Groq
-  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  const groq = getGroqClient()
   const response = await groq.chat.completions.create({
-    model:    'llama-3.1-70b-versatile',
+    model:    MODELS.PREMIUM,
     messages,
   })
 

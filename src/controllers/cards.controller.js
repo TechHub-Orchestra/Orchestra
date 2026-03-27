@@ -49,7 +49,7 @@ export async function getCards(req, res) {
 
 export async function addCard(req, res) {
   const { pan, expiryDate, issuerNr, cardSequenceNr,
-          label, bank, color, cardType } = req.body
+          label, bank, accountNumber, color, cardType } = req.body
 
   // Verify card exists on Card360 (or mock)
   const c360 = await card360.fetchCard({ pan, expiryDate, issuerNr, cardSequenceNr })
@@ -74,6 +74,7 @@ export async function addCard(req, res) {
     userId:      req.user._id,
     label,
     bank,
+    accountNumber,
     color,
     cardType:    cardType || 'debit',
   })
@@ -100,9 +101,9 @@ export async function updateCard(req, res) {
     const updated = await Card.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
       req.body,
-      { new: true, runValidators: true }
     )
-    return res.json({ card: updated })
+    const updatedObj = updated.toObject()
+    return res.json({ card: { ...updatedObj, pan: maskPan(updatedObj.pan) } })
   }
 
   const result = action === 'block'
@@ -114,7 +115,8 @@ export async function updateCard(req, res) {
     await card.save()
   }
 
-  res.json({ card, ...result })
+  const cardObj = card.toObject()
+  res.json({ card: { ...cardObj, pan: maskPan(cardObj.pan) }, ...result })
 }
 
 export async function deleteCard(req, res) {
@@ -133,7 +135,10 @@ export async function getCardBalance(req, res) {
     fetchedAt: { $gte: new Date(Date.now() - 5 * 60 * 1000) }
   }).sort({ fetchedAt: -1 })
 
-  if (cached) return res.json({ balance: cached, fromCache: true })
+  if (cached) {
+    const balObj = cached.toObject()
+    return res.json({ balance: { ...balObj, pan: maskPan(balObj.pan) }, fromCache: true })
+  }
 
   // Cache miss — call Card360 and persist the result
   const data    = await card360.getBalance(card.pan, card.cardType)
@@ -147,5 +152,6 @@ export async function getCardBalance(req, res) {
     responseDescription: data.description || 'Successful',
   })
 
-  res.json({ balance, fromCache: false })
+  const balObj = balance.toObject()
+  res.json({ balance: { ...balObj, pan: maskPan(balObj.pan) }, fromCache: false })
 }

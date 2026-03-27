@@ -377,8 +377,9 @@ paths:
                 cardSequenceNr: { type: string }
                 cardType: { type: string, enum: [debit, prepaid] }
                 label: { type: string }
-                bank: { type: string }
-                color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$', example: '#FF6B35' }
+                bank: { type: string, example: "GTBank" }
+                accountNumber: { type: string, example: "0123456789" }
+                color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$', example: '#FF5733' }
       responses:
         '201':
           description: Card added and verified via Card360
