@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useLogin } from '@/hooks/useAuth'
 import { extractErrorMessage } from '@/lib/utils'
@@ -8,6 +9,7 @@ import { extractErrorMessage } from '@/lib/utils'
 export default function LoginForm() {
   const router = useRouter()
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const { mutate: login, isPending: loading } = useLogin()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -44,14 +46,23 @@ export default function LoginForm() {
       </div>
       <div>
         <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input
-          id="login-password"
-          name="password"
-          type="password"
-          placeholder="••••••••"
-          required
-          className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E94560]"
-        />
+        <div className="relative">
+          <input
+            id="login-password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="••••••••"
+            required
+            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#E94560]"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}

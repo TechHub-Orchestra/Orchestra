@@ -35,34 +35,40 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    // Hydrate stats from API
+    setLoading(true)
     Promise.all([
       fetchWithAuth('/api/cards').then(r => r.json()),
       fetchWithAuth('/api/virtual-cards').then(r => r.json()),
-      fetchWithAuth('/api/transactions?limit=100').then(r => r.json()),
-      fetchWithAuth('/api/insights').then(r => r.json()).catch(() => ({})), // fetch insights with fail-safe
+      fetchWithAuth('/api/transactions?limit=200').then(r => r.json()),
+      fetchWithAuth('/api/insights').then(r => r.json())
     ])
       .then(([cardsData, vcData, txData, insightsData]) => {
         
         let monthlySpend = 0;
         const transactions = Array.isArray(txData?.transactions) ? txData.transactions : [];
-        if(transactions.length > 0) {
-            // Very simple "monthly spend" logic -> just total of all recent transactions for now.
-            monthlySpend = transactions.reduce((acc: number, tx: any) => {
-              // Transactions usually have negative amounts for spending (debits)
-              if (tx.amount < 0) {
-                  return acc + Math.abs(tx.amount);
-              }
-              return acc;
-            }, 0);
+        
+        if (transactions.length > 0) {
+          // Calculate monthly spend from transactions in the current month
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+
+          monthlySpend = transactions.reduce((acc: number, tx: any) => {
+            const txDate = new Date(tx.date);
+            // Check if transaction is a debit and from the current month
+            if (tx.amount < 0 && txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
+              return acc + Math.abs(tx.amount);
+            }
+            return acc;
+          }, 0);
         }
 
         setStats({
           totalCards: Array.isArray(cardsData?.cards) ? cardsData.cards.length : 0,
           virtualCards: Array.isArray(vcData?.virtualCards) ? vcData.virtualCards.length : (Array.isArray(vcData?.cards) ? vcData.cards.length : 0),
-          monthlySpend: monthlySpend,
-           // Use insight savings if available, else 0
-          savedThisMonth: insightsData?.insights?.savingsOpportunity || 0, 
+          monthlySpend: monthlySpend / 100, // Convert Kobo/cents to Naira
+          // Use insight savings if available, else 0
+          savedThisMonth: insightsData?.insights?.savingsOpportunity || 0,
         })
       })
       .catch(() => {})

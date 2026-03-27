@@ -25,10 +25,18 @@ interface VirtualCardListProps {
 export default function VirtualCardList({ cards, onRefresh }: VirtualCardListProps) {
   const [showCreate, setShowCreate] = useState(false)
   const [localCards, setLocalCards] = useState(Array.isArray(cards) ? cards : [])
+  const [physicalCards, setPhysicalCards] = useState<any[]>([])
 
   useEffect(() => {
     setLocalCards(Array.isArray(cards) ? cards : [])
   }, [cards])
+
+  useEffect(() => {
+    fetchWithAuth('/api/cards')
+      .then(r => r.json())
+      .then(data => setPhysicalCards(Array.isArray(data.cards) ? data.cards : []))
+      .catch(() => {})
+  }, [])
 
   async function handlePause(id: string) {
     const res = await fetchWithAuth(`/api/virtual-cards/${id}`, {
@@ -91,6 +99,7 @@ export default function VirtualCardList({ cards, onRefresh }: VirtualCardListPro
             onResume={handleResume}
             onDelete={handleDelete}
             onRefresh={onRefresh}
+            physicalCards={physicalCards}
           />
         ))}
       </div>

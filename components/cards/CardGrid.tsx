@@ -83,6 +83,8 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
       label: 'Orchestra Ultimate',
       cardStatus: '1',
       isUltimate: true,
+      pan: '4000123456789010',
+      expiryDate: '1299',
       availableBalance: safeCards.reduce((acc, c) => acc + (c.availableBalance || 0), 0)
     }
   }, [safeCards])

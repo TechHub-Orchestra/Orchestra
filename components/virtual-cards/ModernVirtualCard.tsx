@@ -25,17 +25,26 @@ interface ModernVirtualCardProps {
   onResume?: (id: string) => void
   onDelete?: (id: string) => void
   onTopUp?: () => void
+  physicalCards?: any[]
 }
 
-export default function ModernVirtualCard({ card, isSelected, onClick, onPause, onResume, onDelete, onTopUp }: ModernVirtualCardProps) {
+export default function ModernVirtualCard({ card, isSelected, onClick, onPause, onResume, onDelete, onTopUp, physicalCards = [] }: ModernVirtualCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [reveal, setReveal] = useState(false)
   const [showTopUp, setShowTopUp] = useState(false)
   const [topUpAmount, setTopUpAmount] = useState('')
+  const [sourceCardId, setSourceCardId] = useState('')
   const [loading, setLoading] = useState(false)
   
   const isPaused = card.paused
   const bgColor = card.color || '#0052FF'
+
+  // Set default source card if not set
+  useEffect(() => {
+    if (showTopUp && !sourceCardId && physicalCards.length > 0) {
+      setSourceCardId(physicalCards[0]._id)
+    }
+  }, [showTopUp, physicalCards, sourceCardId])
 
   const toggleFlip = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -49,14 +58,17 @@ export default function ModernVirtualCard({ card, isSelected, onClick, onPause, 
 
   async function handleTopUp(e: React.FormEvent) {
     e.preventDefault()
-    if (!topUpAmount || isNaN(Number(topUpAmount))) return
+    if (!topUpAmount || isNaN(Number(topUpAmount)) || !sourceCardId) return
     
     setLoading(true)
     try {
       const res = await fetchWithAuth(`/api/virtual-cards/${card._id}/top-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: parseFloat(topUpAmount) }),
+        body: JSON.stringify({ 
+          amount: parseFloat(topUpAmount),
+          sourceCardId
+        }),
       })
       if (res.ok) {
         toast.success('Top-up successful')
@@ -208,9 +220,27 @@ export default function ModernVirtualCard({ card, isSelected, onClick, onPause, 
               >
                 <div>
                   <h4 className="font-bold text-lg mb-1">Top-up Card</h4>
-                  <p className="text-white/50 text-xs mb-6">Select amount to add to your virtual card.</p>
+                  <p className="text-white/50 text-xs mb-6">Fund your virtual card from a physical card.</p>
                   
                   <div className="space-y-4">
+                    {/* Source Card Selector */}
+                    <div>
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2 block">Source Card</label>
+                      <select 
+                        value={sourceCardId}
+                        onChange={e => setSourceCardId(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {physicalCards.length === 0 ? (
+                          <option value="">No cards connected</option>
+                        ) : (
+                          physicalCards.map(c => (
+                            <option key={c._id} value={c._id} className="bg-[#1A1A2E]">{c.label} ({c.bank})</option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">₦</span>
                       <input 

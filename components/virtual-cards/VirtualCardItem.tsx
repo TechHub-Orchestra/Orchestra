@@ -18,9 +18,10 @@ interface VirtualCardItemProps {
   onResume: (id: string) => void
   onDelete: (id: string) => void
   onRefresh: () => void
+  physicalCards: any[]
 }
 
-export default function VirtualCardItem({ card, onPause, onResume, onDelete, onRefresh }: VirtualCardItemProps) {
+export default function VirtualCardItem({ card, onPause, onResume, onDelete, onRefresh, physicalCards }: VirtualCardItemProps) {
   return (
     <ModernVirtualCard 
       card={card} 
@@ -28,6 +29,7 @@ export default function VirtualCardItem({ card, onPause, onResume, onDelete, onR
       onResume={onResume}
       onDelete={onDelete}
       onTopUp={onRefresh}
+      physicalCards={physicalCards}
     />
   )
 }

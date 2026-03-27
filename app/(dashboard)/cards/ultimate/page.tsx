@@ -19,46 +19,85 @@ interface Card {
 export default function UltimateCardPage() {
   const [cards, setCards] = useState<Card[]>([])
   const [mode, setMode] = useState('auto-split')
+  const [primaryCardId, setPrimaryCardId] = useState<string>('')
   const [orderedCards, setOrderedCards] = useState<Card[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const fetchCards = useCallback(async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true)
     try {
-      const res = await fetchWithAuth('/api/cards')
-      const data = await res.json()
-      const active = (data.cards || []).filter((c: { cardStatus: string }) => c.cardStatus === '1')
+      const [cardsRes, routingRes] = await Promise.all([
+        fetchWithAuth('/api/cards'),
+        fetchWithAuth('/api/routing')
+      ])
+      
+      const cardsData = await cardsRes.json()
+      const routingData = await routingRes.json()
+      
+      const active = (cardsData.cards || []).filter((c: { cardStatus: string }) => c.cardStatus === '1')
       setCards(active)
-      setOrderedCards(active)
+      
+      if (routingData) {
+        setMode(routingData.mode || 'auto-split')
+        setPrimaryCardId(routingData.primaryCardId || (active[0]?._id || ''))
+        
+        if (routingData.cardOrder && routingData.cardOrder.length > 0) {
+          const sorted = [...active].sort((a, b) => {
+            const idxA = routingData.cardOrder.indexOf(a._id)
+            const idxB = routingData.cardOrder.indexOf(b._id)
+            if (idxA === -1) return 1
+            if (idxB === -1) return -1
+            return idxA - idxB
+          })
+          setOrderedCards(sorted)
+        } else {
+          setOrderedCards(active)
+        }
+      } else {
+        setOrderedCards(active)
+      }
     } catch {}
+    setLoading(false)
   }, [])
 
-  useEffect(() => { fetchCards() }, [fetchCards])
+  useEffect(() => { fetchData() }, [fetchData])
+
+  async function saveRouting(updates: { mode?: string, primaryCardId?: string, cardIds?: string[] }) {
+    const payload = {
+      mode: updates.mode || mode,
+      primaryCardId: updates.primaryCardId || primaryCardId,
+      cardOrder: updates.cardIds || orderedCards.map(c => c._id)
+    }
+
+    try {
+      const res = await fetchWithAuth('/api/routing', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (res.ok) {
+        toast.success('Routing preferences saved')
+      } else {
+        toast.error('Failed to save routing')
+      }
+    } catch {
+      toast.error('Connection error')
+    }
+  }
 
   async function handleModeChange(newMode: string) {
     setMode(newMode)
-    try {
-      await fetchWithAuth('/api/routing/mode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: newMode }),
-      })
-      toast.success(`Routing set to ${newMode.replace('-', ' ')}`)
-    } catch {
-      toast.error('Failed to save routing mode')
-    }
+    saveRouting({ mode: newMode })
   }
 
   async function handleReorder(reordered: Card[]) {
     setOrderedCards(reordered)
-    try {
-      await fetchWithAuth('/api/routing/priority', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cardIds: reordered.map(c => c._id) }),
-      })
-      toast.success('Card priority updated')
-    } catch {
-      toast.error('Failed to save priority')
-    }
+    saveRouting({ cardIds: reordered.map(c => c._id) })
+  }
+
+  async function handlePrimaryChange(id: string) {
+    setPrimaryCardId(id)
+    saveRouting({ primaryCardId: id })
   }
 
   return (
@@ -83,6 +122,35 @@ export default function UltimateCardPage() {
           <div className="bg-white rounded-2xl border p-6">
             <h2 className="font-bold text-dark mb-4">Routing Mode</h2>
             <RoutingModeSelector selected={mode} onChange={handleModeChange} />
+            
+            {mode === 'primary' && (
+              <div className="mt-6 pt-6 border-t animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Select Primary Card</label>
+                <div className="space-y-2">
+                  {cards.map(card => (
+                    <button
+                      key={card._id}
+                      onClick={() => handlePrimaryChange(card._id)}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all
+                        ${primaryCardId === card._id 
+                          ? 'border-[#E94560] bg-[#E94560]/5 ring-4 ring-[#E94560]/5' 
+                          : 'border-gray-50 hover:border-gray-200'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400">
+                          {card.bank?.slice(0, 3)}
+                        </div>
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-[#1A1A2E]">{card.label}</p>
+                          <p className="text-[10px] text-gray-500">{card.bank}</p>
+                        </div>
+                      </div>
+                      {primaryCardId === card._id && <div className="w-2 h-2 rounded-full bg-[#E94560]" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Card Priority */}
