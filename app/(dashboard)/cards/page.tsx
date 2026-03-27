@@ -29,7 +29,7 @@ export default function CardsPage() {
     try {
       const res = await fetchWithAuth('/api/cards')
       const data = await res.json()
-      setCards(data.cards || [])
+      setCards(Array.isArray(data?.cards) ? data.cards : [])
     } catch {
       setError(true)
     } finally {

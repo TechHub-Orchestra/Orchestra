@@ -5,6 +5,8 @@ import QuickStats from '@/components/dashboard/QuickStats'
 import SpendingChart from '@/components/dashboard/SpendingChart'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { fetchWithAuth } from '@/lib/fetch-utils'
+import { ArrowUpRight, ArrowDownLeft, Send, Zap } from 'lucide-react'
+import Link from 'next/link'
 
 interface Transaction {
   _id: string
@@ -41,9 +43,10 @@ export default function DashboardPage() {
       .then(([cardsData, vcData, txData, insightsData]) => {
         
         let monthlySpend = 0;
-        if(txData && txData.transactions) {
+        const transactions = Array.isArray(txData?.transactions) ? txData.transactions : [];
+        if(transactions.length > 0) {
             // Very simple "monthly spend" logic -> just total of all recent transactions for now.
-            monthlySpend = txData.transactions.reduce((acc: number, tx: any) => {
+            monthlySpend = transactions.reduce((acc: number, tx: any) => {
               // Transactions usually have negative amounts for spending (debits)
               if (tx.amount < 0) {
                   return acc + Math.abs(tx.amount);
@@ -53,8 +56,8 @@ export default function DashboardPage() {
         }
 
         setStats({
-          totalCards: cardsData?.cards?.length || 0,
-          virtualCards: vcData?.virtualCards?.length || vcData?.cards?.length || 0,
+          totalCards: Array.isArray(cardsData?.cards) ? cardsData.cards.length : 0,
+          virtualCards: Array.isArray(vcData?.virtualCards) ? vcData.virtualCards.length : (Array.isArray(vcData?.cards) ? vcData.cards.length : 0),
           monthlySpend: monthlySpend,
            // Use insight savings if available, else 0
           savedThisMonth: insightsData?.insights?.savingsOpportunity || 0, 
@@ -67,7 +70,7 @@ export default function DashboardPage() {
     fetchWithAuth('/api/transactions?limit=5')
       .then(r => r.json())
       .then(d => {
-        setRecentTx(d.transactions || d.data || [])
+        setRecentTx(Array.isArray(d?.transactions) ? d.transactions : (Array.isArray(d?.data) ? d.data : []))
         setTxLoading(false)
       })
       .catch(() => setTxLoading(false))
@@ -98,6 +101,35 @@ export default function DashboardPage() {
       </div>
 
       <BalanceSummary />
+
+      {/* Action Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Link href="/transfers" className="bg-white border-2 border-gray-50 hover:border-[#E94560]/20 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Send size={24} />
+          </div>
+          <span className="text-sm font-bold text-[#1A1A2E]">Send Money</span>
+        </Link>
+        <Link href="/bills" className="bg-white border-2 border-gray-50 hover:border-[#E94560]/20 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Zap size={24} />
+          </div>
+          <span className="text-sm font-bold text-[#1A1A2E]">Pay Bills</span>
+        </Link>
+        <Link href="/transactions" className="bg-white border-2 border-gray-50 hover:border-[#E94560]/20 p-4 rounded-2xl flex flex-col items-center gap-2 transition-all group">
+          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <ArrowUpRight size={24} />
+          </div>
+          <span className="text-sm font-bold text-[#1A1A2E]">History</span>
+        </Link>
+        <Link href="/chat" className="bg-[#1A1A2E] p-4 rounded-2xl flex flex-col items-center gap-2 transition-all hover:scale-[1.02] group">
+          <div className="w-12 h-12 rounded-xl bg-[#E94560] text-white flex items-center justify-center shadow-lg shadow-[#E94560]/20">
+            <span className="text-xl">✦</span>
+          </div>
+          <span className="text-sm font-bold text-white">AI Advisor</span>
+        </Link>
+      </div>
+
       <QuickStats {...stats} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -18,7 +18,7 @@ export default function AnomalyFeed() {
   useEffect(() => {
     fetchWithAuth('/api/anomalies')
       .then(r => r.json())
-      .then(d => { setAnomalies(d.anomalies || []); setLoading(false) })
+      .then(d => { setAnomalies(Array.isArray(d?.anomalies) ? d.anomalies : []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 

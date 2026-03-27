@@ -24,7 +24,16 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
   const [loading, setLoading] = useState(false)
   const [selectedColor, setSelectedColor] = useState(CARD_COLORS[0])
   const [form, setForm] = useState({
-    label: '', bank: 'GTBank', pan: '', expiryDate: '', cvv: '', nameOnCard: '', cardProgram: 'VERVE',
+    label: '',
+    bank: 'GTBank',
+    pan: '',
+    expiryDate: '',
+    cvv: '',
+    nameOnCard: '',
+    cardProgram: 'VERVE',
+    issuerNr: '',
+    cardSequenceNr: '',
+    cardType: 'debit'
   })
 
   if (!open) return null
@@ -37,6 +46,7 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
     e.preventDefault()
     setLoading(true)
     try {
+      // Backend expects expiryDate in YYMM format (e.g., '2612')
       const res = await fetchWithAuth('/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,6 +115,20 @@ export default function AddCardModal({ open, onClose, onAdded }: AddCardModalPro
           <div className="grid grid-cols-2 gap-3">
             <InputField label="Expiry (YYMM)" name="expiryDate" value={form.expiryDate} onChange={v => updateField('expiryDate', v)} placeholder="2612" maxLength={4} />
             <InputField label="CVV" name="cvv" value={form.cvv} onChange={v => updateField('cvv', v)} placeholder="123" maxLength={4} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <InputField label="Issuer Nr" name="issuerNr" value={form.issuerNr} onChange={v => updateField('issuerNr', v)} placeholder="e.g. 123" />
+            <InputField label="Sequence Nr" name="cardSequenceNr" value={form.cardSequenceNr} onChange={v => updateField('cardSequenceNr', v)} placeholder="e.g. 01" />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Card Type</label>
+            <select value={form.cardType} onChange={e => updateField('cardType', e.target.value)}
+              className="w-full border rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#E94560] focus:outline-none">
+              <option value="debit">Debit</option>
+              <option value="prepaid">Prepaid</option>
+            </select>
           </div>
 
           <button

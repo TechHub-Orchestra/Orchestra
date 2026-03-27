@@ -80,7 +80,7 @@ export default function AIInsightsPanel() {
         try {
           const r = await fetchWithAuth('/api/transactions?limit=100')
           const d = await r.json()
-          const txs: Transaction[] = d.transactions || []
+          const txs: Transaction[] = Array.isArray(d?.transactions) ? d.transactions : []
           setData(buildLocalInsights(txs))
           setSource('local')
         } catch {

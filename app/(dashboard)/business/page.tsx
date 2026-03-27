@@ -35,12 +35,11 @@ export default function BusinessPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [cardsRes, reqRes] = await Promise.all([
-        fetchWithAuth('/api/business/cards').then(r => r.json()),
-        fetchWithAuth('/api/business/approvals').then(r => r.json()),
-      ])
-      setCards(cardsRes.cards || [])
-      setRequests(reqRes.requests || [])
+      const res = await fetchWithAuth('/api/business')
+      const data = await res.json()
+      // The API returns { cards, pendingActions } in a single call
+      setCards(Array.isArray(data?.cards) ? data.cards : [])
+      setRequests(Array.isArray(data?.pendingActions) ? data.pendingActions : [])
     } catch {}
     setLoading(false)
   }, [])
@@ -49,7 +48,11 @@ export default function BusinessPage() {
 
   async function handleApprove(id: string) {
     try {
-      await fetchWithAuth(`/api/business/approvals/${id}/approve`, { method: 'POST' })
+      await fetchWithAuth('/api/business/approve', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id, action: 'approve' })
+      })
       setRequests(rs => rs.filter(r => r._id !== id))
       toast.success('Request approved')
     } catch { toast.error('Failed to approve') }
@@ -57,7 +60,11 @@ export default function BusinessPage() {
 
   async function handleReject(id: string) {
     try {
-      await fetchWithAuth(`/api/business/approvals/${id}/reject`, { method: 'POST' })
+      await fetchWithAuth('/api/business/approve', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: id, action: 'reject' })
+      })
       setRequests(rs => rs.filter(r => r._id !== id))
       toast.success('Request rejected')
     } catch { toast.error('Failed to reject') }

@@ -8,6 +8,7 @@ import {
   History,
   Briefcase,
   Sparkles,
+  MessageSquare,
   LogOut,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
@@ -20,6 +21,7 @@ const navItems = [
   { href: '/virtual-cards', label: 'Virtual Cards', icon: Layers },
   { href: '/business',      label: 'Business',      icon: Briefcase },
   { href: '/insights',      label: 'AI Insights',   icon: Sparkles },
+  { href: '/chat',          label: 'Ask Orchestra', icon: MessageSquare },
 ]
 
 export default function Sidebar() {

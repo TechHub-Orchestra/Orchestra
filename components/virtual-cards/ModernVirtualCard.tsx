@@ -2,7 +2,9 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toNaira } from '@/utils/format'
-import { Eye, EyeOff, Settings, Pause, Play, Trash2, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, Settings, Pause, Play, Trash2, ArrowLeft, Plus } from 'lucide-react'
+import { fetchWithAuth } from '@/lib/fetch-utils'
+import toast from 'react-hot-toast'
 
 interface ModernVirtualCardProps {
   card: {
@@ -22,11 +24,15 @@ interface ModernVirtualCardProps {
   onPause?: (id: string) => void
   onResume?: (id: string) => void
   onDelete?: (id: string) => void
+  onTopUp?: () => void
 }
 
-export default function ModernVirtualCard({ card, isSelected, onClick, onPause, onResume, onDelete }: ModernVirtualCardProps) {
+export default function ModernVirtualCard({ card, isSelected, onClick, onPause, onResume, onDelete, onTopUp }: ModernVirtualCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [reveal, setReveal] = useState(false)
+  const [showTopUp, setShowTopUp] = useState(false)
+  const [topUpAmount, setTopUpAmount] = useState('')
+  const [loading, setLoading] = useState(false)
   
   const isPaused = card.paused
   const bgColor = card.color || '#0052FF'
@@ -39,6 +45,32 @@ export default function ModernVirtualCard({ card, isSelected, onClick, onPause, 
   const toggleReveal = (e: React.MouseEvent) => {
     e.stopPropagation()
     setReveal(!reveal)
+  }
+
+  async function handleTopUp(e: React.FormEvent) {
+    e.preventDefault()
+    if (!topUpAmount || isNaN(Number(topUpAmount))) return
+    
+    setLoading(true)
+    try {
+      const res = await fetchWithAuth(`/api/virtual-cards/${card._id}/top-up`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: parseFloat(topUpAmount) }),
+      })
+      if (res.ok) {
+        toast.success('Top-up successful')
+        setShowTopUp(false)
+        setTopUpAmount('')
+        onTopUp?.()
+      } else {
+        toast.error('Top-up failed')
+      }
+    } catch {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -150,6 +182,12 @@ export default function ModernVirtualCard({ card, isSelected, onClick, onPause, 
                 {isPaused ? 'Resume' : 'Pause'}
               </button>
               <button
+                onClick={(e) => { e.stopPropagation(); setShowTopUp(true) }}
+                className="bg-blue-500/20 text-blue-100 p-3 rounded-2xl border border-blue-500/30 hover:bg-blue-500 hover:text-white transition-all"
+              >
+                <Plus size={18} />
+              </button>
+              <button
                 onClick={(e) => { e.stopPropagation(); onDelete?.(card._id) }}
                 className="bg-red-500/20 text-red-100 p-3 rounded-2xl border border-red-500/30 hover:bg-red-500 hover:text-white transition-all"
               >
@@ -157,6 +195,65 @@ export default function ModernVirtualCard({ card, isSelected, onClick, onPause, 
               </button>
             </div>
           </div>
+
+          {/* Top-up Overlay */}
+          <AnimatePresence>
+            {showTopUp && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="absolute inset-0 bg-[#1A1A2E]/95 backdrop-blur-md rounded-3xl z-30 p-8 flex flex-col justify-between"
+                onClick={e => e.stopPropagation()}
+              >
+                <div>
+                  <h4 className="font-bold text-lg mb-1">Top-up Card</h4>
+                  <p className="text-white/50 text-xs mb-6">Select amount to add to your virtual card.</p>
+                  
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">₦</span>
+                      <input 
+                        type="number"
+                        autoFocus
+                        value={topUpAmount}
+                        onChange={e => setTopUpAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-8 pr-4 text-xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['500', '1000', '2500'].map(amt => (
+                        <button 
+                          key={amt}
+                          onClick={() => setTopUpAmount(amt)}
+                          className="bg-white/5 hover:bg-white/10 border border-white/10 py-2 rounded-xl text-xs font-bold transition-all"
+                        >
+                          ₦{amt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => setShowTopUp(false)}
+                    className="flex-1 py-3 rounded-2xl text-sm font-bold text-white/60 hover:text-white transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleTopUp}
+                    disabled={loading || !topUpAmount}
+                    className="flex-[2] bg-blue-600 hover:bg-blue-500 disabled:opacity-50 py-3 rounded-2xl text-sm font-bold transition-all"
+                  >
+                    {loading ? 'Processing...' : 'Confirm Top-up'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
       <style jsx global>{`

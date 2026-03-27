@@ -57,7 +57,7 @@ export default function TransactionTable({ onExport }: { onExport?: (txs: Transa
     try {
       const res = await fetchWithAuth('/api/transactions?limit=100')
       const data = await res.json()
-      setTransactions(data.transactions || data.data || [])
+      setTransactions(Array.isArray(data?.transactions) ? data.transactions : (Array.isArray(data?.data) ? data.data : []))
     } catch {
       setTransactions([])
     } finally {

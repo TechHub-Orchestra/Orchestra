@@ -45,7 +45,8 @@ export default function TransactionSimulator() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: parseFloat(amount),
+          // Backend expects amount in Kobo for simulations
+          amount: Math.round(parseFloat(amount) * 100),
           merchant,
           category,
         }),

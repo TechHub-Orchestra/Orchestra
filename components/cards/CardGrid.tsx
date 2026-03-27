@@ -1,5 +1,6 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import CardWidget from './CardWidget'
 import CardActions from './CardActions'
 import EmptyState from '@/components/shared/EmptyState'
@@ -70,6 +71,9 @@ interface CardGridProps {
 }
 
 export default function CardGrid({ cards, onRefresh }: CardGridProps) {
+  // Ensure cards is an array to avoid map errors
+  const safeCards = Array.isArray(cards) ? cards : [];
+
   // Split localCards into ultimate and physical
   const ultimateCardData: Card = useMemo(() => {
     return {
@@ -77,11 +81,17 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
       label: 'Orchestra Ultimate',
       cardStatus: '1',
       isUltimate: true,
-      availableBalance: cards.reduce((acc, c) => acc + (c.availableBalance || 0), 0)
+      availableBalance: safeCards.reduce((acc, c) => acc + (c.availableBalance || 0), 0)
     }
-  }, [cards])
+  }, [safeCards])
 
-  const [physicalCards, setPhysicalCards] = useState<Card[]>(cards)
+  const [physicalCards, setPhysicalCards] = useState<Card[]>(safeCards)
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    setPhysicalCards(Array.isArray(cards) ? cards : []);
+  }, [cards]);
+
   const [selectedId, setSelectedId] = useState<string | null>(ultimateCardData._id)
   const [showAdd, setShowAdd] = useState(false)
 
@@ -94,23 +104,63 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
     ? ultimateCardData 
     : physicalCards.find(c => c._id === selectedId)
 
-  function handleStatusChange(cardId: string, newStatus: string) {
+  async function handleStatusChange(cardId: string, newStatus: string) {
     if (cardId === 'ultimate_card_001') return // Manage ultimate status separately if needed
     setPhysicalCards(cs => cs.map(c => c._id === cardId ? { ...c, cardStatus: newStatus } : c))
   }
 
-  function handleBlock(id: string) {
-    handleStatusChange(id, '2')
+  async function handleBlock(id: string) {
+    try {
+      const res = await fetchWithAuth(`/api/cards/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'block' }),
+      })
+      if (res.ok) {
+        handleStatusChange(id, '2')
+        toast.success('Card blocked')
+      } else {
+        toast.error('Failed to block card')
+      }
+    } catch {
+      toast.error('An error occurred')
+    }
   }
 
-  function handleUnblock(id: string) {
-    handleStatusChange(id, '1')
+  async function handleUnblock(id: string) {
+    try {
+      const res = await fetchWithAuth(`/api/cards/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unblock' }),
+      })
+      if (res.ok) {
+        handleStatusChange(id, '1')
+        toast.success('Card unblocked')
+      } else {
+        toast.error('Failed to unblock card')
+      }
+    } catch {
+      toast.error('An error occurred')
+    }
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to remove this card?')) return
-    setPhysicalCards(cs => cs.filter(c => c._id !== id))
-    if (selectedId === id) setSelectedId(null)
+    try {
+      const res = await fetchWithAuth(`/api/cards/${id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setPhysicalCards(cs => cs.filter(c => c._id !== id))
+        if (selectedId === id) setSelectedId(ultimateCardData._id)
+        toast.success('Card removed')
+      } else {
+        toast.error('Failed to remove card')
+      }
+    } catch {
+      toast.error('An error occurred')
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -187,8 +237,8 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
         <div className="bg-white rounded-2xl border p-5">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="font-bold text-[#1A1A2E]">{selectedCard.label || selectedCard.nameOnCard}</h3>
-              <p className="text-gray-500 text-sm">{selectedCard.isUltimate ? 'Master Card' : `${selectedCard.bank} · ${selectedCard.cardProgram}`}</p>
+              <h3 className="font-bold text-[#1A1A2E]">{(selectedCard as any).label || (selectedCard as any).nameOnCard}</h3>
+              <p className="text-gray-500 text-sm">{selectedCard.isUltimate ? 'Master Card' : `${(selectedCard as any).bank} · ${(selectedCard as any).cardProgram}`}</p>
             </div>
           </div>
           {!selectedCard.isUltimate && (
@@ -199,8 +249,8 @@ export default function CardGrid({ cards, onRefresh }: CardGridProps) {
             />
           )}
           {selectedCard.isUltimate && (
-            <div className="bg-blue-50 p-4 rounded-xl flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">✨</div>
+            <div className="bg-blue-50 p-4 rounded-xl flex items-center gap-3 mt-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 shrink-0">✨</div>
               <div>
                 <p className="text-sm font-bold text-blue-900">Ultimate Orchestration Active</p>
                 <p className="text-xs text-blue-700">This card automatically routes transactions to your prioritized physical cards.</p>

@@ -36,7 +36,7 @@ export default function InsightsPage() {
       try {
         const r = await fetchWithAuth('/api/transactions?limit=200')
         const d = await r.json()
-        const txs: Array<{ category: string; amount: number }> = d.transactions || []
+        const txs: Array<{ category: string; amount: number }> = Array.isArray(d?.transactions) ? d.transactions : []
         const catMap: Record<string, number> = {}
         for (const tx of txs) {
           if (tx.amount < 0) {
@@ -54,9 +54,10 @@ export default function InsightsPage() {
     try {
       const res = await fetchWithAuth('/api/report?days=30')
       const { report } = await res.json()
+      const txList = Array.isArray(report?.transactions) ? report.transactions : [];
       const rows = [
         ['Date', 'Merchant', 'Category', 'Amount (NGN)', 'Reference', 'Flagged'],
-        ...(report?.transactions || []).map((t: {
+        ...txList.map((t: {
           date: string; merchant: string; category: string;
           amount: number; reference: string; flagged: boolean
         }) => [

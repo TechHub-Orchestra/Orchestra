@@ -5,6 +5,7 @@ import { useState } from 'react'
 import CreateVirtualCardModal from './CreateVirtualCardModal'
 import toast from 'react-hot-toast'
 import { fetchWithAuth } from '@/lib/fetch-utils'
+import { useEffect } from 'react'
 
 interface VirtualCard {
   _id: string
@@ -23,7 +24,11 @@ interface VirtualCardListProps {
 
 export default function VirtualCardList({ cards, onRefresh }: VirtualCardListProps) {
   const [showCreate, setShowCreate] = useState(false)
-  const [localCards, setLocalCards] = useState(cards)
+  const [localCards, setLocalCards] = useState(Array.isArray(cards) ? cards : [])
+
+  useEffect(() => {
+    setLocalCards(Array.isArray(cards) ? cards : [])
+  }, [cards])
 
   async function handlePause(id: string) {
     const res = await fetchWithAuth(`/api/virtual-cards/${id}`, {
@@ -85,6 +90,7 @@ export default function VirtualCardList({ cards, onRefresh }: VirtualCardListPro
             onPause={handlePause}
             onResume={handleResume}
             onDelete={handleDelete}
+            onRefresh={onRefresh}
           />
         ))}
       </div>

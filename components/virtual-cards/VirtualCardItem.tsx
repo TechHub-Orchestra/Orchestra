@@ -17,15 +17,17 @@ interface VirtualCardItemProps {
   onPause: (id: string) => void
   onResume: (id: string) => void
   onDelete: (id: string) => void
+  onRefresh: () => void
 }
 
-export default function VirtualCardItem({ card, onPause, onResume, onDelete }: VirtualCardItemProps) {
+export default function VirtualCardItem({ card, onPause, onResume, onDelete, onRefresh }: VirtualCardItemProps) {
   return (
     <ModernVirtualCard 
       card={card} 
       onPause={onPause}
       onResume={onResume}
       onDelete={onDelete}
+      onTopUp={onRefresh}
     />
   )
 }
