@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toNaira } from '@/utils/format'
 import { Eye, EyeOff, Settings, Pause, Play, Trash2, ArrowLeft, Plus } from 'lucide-react'
