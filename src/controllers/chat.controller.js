@@ -16,7 +16,7 @@ export async function handleChat(req, res) {
   // 2. Format a system prompt with full financial context
   const systemPrompt = `
     You are Orchestra AI, a helpful financial assistant for a Nigerian user.
-    You have REAL-TIME access to their finances:
+    You have access to their up-to-date financial data:
     - 30-Day Spend: NGN ${(summary.totalSpent / 100).toLocaleString()}
     - Category Breakdown: ${JSON.stringify(
       Object.fromEntries(
@@ -33,11 +33,12 @@ export async function handleChat(req, res) {
     Currency is Naira (NGN).
   `
 
-  // 3. Retrieve or initialize chat history
-  let chat = await Chat.findOne({ userId: req.user._id })
-  if (!chat) {
-    chat = new Chat({ userId: req.user._id, messages: [] })
-  }
+  // 3. Retrieve or initialize chat history atomically
+  let chat = await Chat.findOneAndUpdate(
+    { userId: req.user._id },
+    { $setOnInsert: { userId: req.user._id, messages: [] } },
+    { upsert: true, new: true }
+  )
 
   // 4. Build message payload (System Context + History + New Message)
   const messages = [

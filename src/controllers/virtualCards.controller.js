@@ -1,6 +1,7 @@
 import VirtualCard from '../db/models/VirtualCard.js'
 import Card from '../db/models/Card.js'
 import Transaction from '../db/models/Transaction.js'
+import CardBalance from '../db/models/CardBalance.js'
 import { card360 } from '../services/card360.js'
 import { randomUUID } from 'crypto'
 
@@ -75,12 +76,20 @@ export async function topUpVirtualCard(req, res) {
     cardId: sourceCard._id,
     pan: sourceCard.pan,
     amount: amountKobo,
+    currency: 'NGN',
     type: 'top_up',
     category: 'other',
     merchant: 'Orchestra Internal',
     narration: `Virtual Card Top-up: ${vc.label}`,
     reference: randomUUID(),
   })
+
+  // Update balance cache to reflect deduction so demo mock works perfectly
+  await CardBalance.findOneAndUpdate(
+    { pan: sourceCard.pan },
+    { $inc: { availableBalance: -amountKobo, ledgerBalance: -amountKobo }, $set: { fetchedAt: new Date() } },
+    { sort: { fetchedAt: -1 } }
+  )
 
   res.json({ success: true, spendLimit: vc.spendLimit })
 }

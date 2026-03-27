@@ -66,6 +66,7 @@ export const simulateRoutingSchema = z.object({
 
 export const createTransactionSchema = z.object({
   amount:          z.number().int().positive('amount must be positive kobo'),
+  type:            z.enum(['debit', 'top_up', 'transfer', 'bill_payment']).default('debit').optional(),
   merchant:        z.string().optional(),
   merchantCategory: z.string().optional(),
   category:        z.enum(['food', 'transport', 'subscriptions', 'utilities',

@@ -1,6 +1,7 @@
 import Transfer from '../db/models/Transfer.js'
 import Card from '../db/models/Card.js'
 import Transaction from '../db/models/Transaction.js'
+import CardBalance from '../db/models/CardBalance.js'
 import { card360 } from '../services/card360.js'
 import { randomUUID } from 'crypto'
 
@@ -50,6 +51,13 @@ export async function createTransfer(req, res) {
     transactionId:   tx._id,
     status:          'success',
   })
+
+  // Update balance cache to reflect deduction so demo mock works perfectly
+  await CardBalance.findOneAndUpdate(
+    { pan: sourceCard.pan },
+    { $inc: { availableBalance: -amountKobo, ledgerBalance: -amountKobo }, $set: { fetchedAt: new Date() } },
+    { sort: { fetchedAt: -1 } }
+  )
 
   res.status(201).json({ success: true, transfer })
 }

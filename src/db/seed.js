@@ -32,6 +32,8 @@ await Promise.all([
   VirtualCard.deleteMany({}),
   BusinessCard.deleteMany({}),
   ApprovalRequest.deleteMany({}),
+  Transfer.deleteMany({}),
+  BillPayment.deleteMany({}),
 ])
 console.log('🗑  Cleared existing data')
 

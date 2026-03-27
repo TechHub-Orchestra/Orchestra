@@ -35,9 +35,14 @@ app.use('/api/', limiter)
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'))
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+let swaggerDocument
+try {
+  swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'))
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument))
+} catch (err) {
+  console.warn('⚠️  swagger.yaml not found — /api-docs disabled')
+}
 
 // Security headers
 app.use(helmet())
@@ -55,7 +60,7 @@ app.use(pinoHttp({
 // CORS setup — supports multiple URLs as a comma-separated list in .env
 const allowedOrigins = process.env.CLIENT_URL 
   ? process.env.CLIENT_URL.split(',').map(o => o.trim()) 
-  : '*'
+  : ['http://localhost:3000']
 
 app.use(cors({ 
   origin:      allowedOrigins,
