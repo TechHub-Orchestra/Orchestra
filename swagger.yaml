@@ -752,6 +752,28 @@ paths:
                   total: { type: integer }
                   page: { type: integer }
                   limit: { type: integer }
+  
+  /api/transactions/summary:
+    get:
+      summary: Get the 30-day monthly spending summary
+      tags: [Transactions]
+      responses:
+        '200':
+          description: Monthly spending breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summary:
+                    type: object
+                    properties:
+                      totalSpent: { type: number, description: Total spent in kobo }
+                      subscriptionSpend: { type: number, description: Subscription spend in kobo }
+                      byCategory: { type: object, additionalProperties: { type: number } }
+                      transactionCount: { type: integer }
+                      anomalyCount: { type: integer }
+
     post:
       summary: Create a transaction via the routing engine
       description: |

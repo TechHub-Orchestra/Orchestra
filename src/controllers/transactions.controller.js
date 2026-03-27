@@ -4,6 +4,7 @@ import CardBalance from '../db/models/CardBalance.js'
 import Card from '../db/models/Card.js'
 import { resolvePayment } from '../services/routing.js'
 import { detectAnomalies } from '../services/anomaly.js'
+import { getSpendingSummary } from '../services/insights.js'
 
 const maskPan = (pan) => pan ? `****-****-****-${pan.slice(-4)}` : null
 
@@ -32,6 +33,12 @@ export async function getTransactions(req, res) {
   })
 
   res.json({ transactions: masked, total, page: Number(page), limit: Number(limit) })
+}
+
+// GET /api/transactions/summary
+export async function getTransactionSummary(req, res) {
+  const summary = await getSpendingSummary(req.user._id, 30)
+  res.json({ summary })
 }
 
 // GET /api/transactions/:id
