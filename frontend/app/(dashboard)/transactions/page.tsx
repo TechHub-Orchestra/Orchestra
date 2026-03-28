@@ -1,14 +1,14 @@
 'use client'
-import TransactionTable from '@/components/transactions/TransactionTable'
+import TransactionTable, { Transaction } from '@/components/transactions/TransactionTable'
 import { Download } from 'lucide-react'
 import { useCallback, useRef } from 'react'
 import toast from 'react-hot-toast'
 
 export default function TransactionsPage() {
   // hold reference to the currently-filtered transactions from the table
-  const filteredRef = useRef<{ merchant: string; category: string; amount: number; date: string; card?: string; cardLabel?: string; reference?: string; flagged?: boolean }[]>([])
+  const filteredRef = useRef<Transaction[]>([])
 
-  const handleExport = useCallback((txs: typeof filteredRef.current) => {
+  const handleExport = useCallback((txs: Transaction[]) => {
     filteredRef.current = txs
   }, [])
 
@@ -21,7 +21,7 @@ export default function TransactionsPage() {
     const rows = [
       ['Date', 'Merchant', 'Category', 'Card', 'Amount (NGN)', 'Reference', 'Flagged'],
       ...txs.map(t => [
-        new Date(t.date).toLocaleDateString('en-NG'),
+        new Date(t.transactionDate).toLocaleDateString('en-NG'),
         t.merchant,
         t.category,
         t.cardLabel || t.card || '',

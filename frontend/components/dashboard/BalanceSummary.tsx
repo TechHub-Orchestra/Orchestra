@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Plus, Copy, Check, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -7,13 +7,14 @@ import { toNaira } from '@/utils/format'
 import { fetchWithAuth } from '@/lib/fetch-utils'
 import { useCurrentUser } from '@/hooks/useAuth'
 import { useCards } from '@/hooks/useCards'
+import { Card } from '@/api-client/types'
 
 export default function BalanceSummary() {
   const { data: user } = useCurrentUser()
   const { data: cardsData, isLoading: loading, refetch } = useCards()
   const [copying, setCopying] = useState<string | null>(null)
 
-  const cards = cardsData || []
+  const cards: Card[] = cardsData || []
   const total = cards.reduce((s, c) => s + (c.availableBalance || 0), 0)
   const active = cards.filter(c => c.cardStatus === '1').length
   const cardCount = cards.length
@@ -75,7 +76,7 @@ export default function BalanceSummary() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {cards.length > 0 ? (
-            cards.map((card: any) => (
+            cards.map((card) => (
               <div key={card._id} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-transparent hover:border-gray-200 transition-all group">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white border flex items-center justify-center text-[9px] font-black text-gray-400 shadow-sm shrink-0">

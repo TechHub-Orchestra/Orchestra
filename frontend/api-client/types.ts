@@ -18,6 +18,9 @@ export interface Card {
   label: string;
   isDefault: boolean;
   spendLimit: number;
+  availableBalance?: number;
+  bank?: string;
+  accountNumber?: string;
 }
 
 export interface VirtualCard {

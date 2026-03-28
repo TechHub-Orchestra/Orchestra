@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/utils/cn'
 import { fetchWithAuth } from '@/lib/fetch-utils'
 
-interface Transaction {
+export interface Transaction {
   _id: string
   merchant: string
   category: string
