@@ -43,19 +43,22 @@ function CardChip({ color, label, bank, pan, delay = '0s' }: {
 }) {
   return (
     <div
-      className="absolute rounded-2xl p-4 shadow-2xl w-52 text-white text-xs select-none"
+      className="absolute rounded-[24px] p-6 shadow-2xl w-64 text-white text-xs select-none"
       style={{
         background: color,
         animation: `floatCard 4s ease-in-out infinite`,
         animationDelay: delay,
       }}
     >
-      <div className="flex justify-between items-start mb-6">
-        <span className="font-black text-base tracking-tight">Orchestra</span>
-        <span className="opacity-70 uppercase text-[9px] tracking-widest font-semibold">{bank}</span>
+      <div className="flex justify-between items-start mb-8">
+        <span className="font-black text-xl tracking-tight">Orchestra</span>
+        <span className="opacity-70 uppercase text-[10px] tracking-widest font-bold">{bank}</span>
       </div>
-      <p className="font-mono tracking-widest text-[11px] mb-3 opacity-90">{pan}</p>
-      <p className="font-semibold opacity-80">{label}</p>
+      <p className="font-mono tracking-[0.2em] text-[13px] mb-5 opacity-90">{pan}</p>
+      <div className="flex justify-between items-end">
+        <p className="font-bold text-sm opacity-90">{label}</p>
+        <div className="w-10 h-6 bg-white/20 rounded-md backdrop-blur-sm" />
+      </div>
     </div>
   )
 }
@@ -275,20 +278,20 @@ export default function LandingPage() {
           </div>
 
           {/* Right — floating cards */}
-          <div className="relative h-80 lg:h-96 hidden lg:block">
-            <div style={{ '--rot': '-8deg' } as React.CSSProperties} className="absolute top-4 left-12">
-              <CardChip color="linear-gradient(135deg,#1A1A2E,#E94560)" label="GTBank" bank="GTBank" pan="5399 •••• •••• 1234" delay="0s" />
+          <div className="relative h-96 lg:h-[450px] hidden lg:block">
+            <div style={{ '--rot': '-8deg' } as React.CSSProperties} className="absolute top-0 left-24 z-30">
+              <CardChip color="linear-gradient(135deg,#1A1A2E,#E94560)" label="Master Orchestrator" bank="Ultimate Card" pan="5399 •••• •••• 8888" delay="0s" />
             </div>
-            <div style={{ '--rot': '4deg' } as React.CSSProperties} className="absolute top-28 left-44">
-              <CardChip color="linear-gradient(135deg,#0F3460,#533483)" label="Access Bank" bank="Access" pan="4111 •••• •••• 5678" delay="0.8s" />
+            <div style={{ '--rot': '4deg' } as React.CSSProperties} className="absolute top-32 left-52 z-20">
+              <CardChip color="linear-gradient(135deg,#0F3460,#533483)" label="Primary Debit" bank="Physical Card" pan="4111 •••• •••• 1234" delay="0.8s" />
             </div>
-            <div style={{ '--rot': '-3deg' } as React.CSSProperties} className="absolute top-52 left-20">
-              <CardChip color="linear-gradient(135deg,#16213E,#E94560CC)" label="Zenith Bank" bank="Zenith" pan="6280 •••• •••• 9012" delay="1.6s" />
+            <div style={{ '--rot': '-3deg' } as React.CSSProperties} className="absolute top-64 left-28 z-10">
+              <CardChip color="linear-gradient(135deg,#16213E,#E94560CC)" label="Netflix Subscription" bank="Virtual Card" pan="6280 •••• •••• 4567" delay="1.6s" />
             </div>
             {/* Connection lines SVG */}
             <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-              <line x1="100" y1="60" x2="220" y2="160" stroke="#E94560" strokeWidth="1.5" strokeDasharray="6 4" />
-              <line x1="220" y1="160" x2="130" y2="260" stroke="#E94560" strokeWidth="1.5" strokeDasharray="6 4" />
+              <line x1="200" y1="80" x2="320" y2="180" stroke="#E94560" strokeWidth="2" strokeDasharray="8 6" />
+              <line x1="320" y1="180" x2="230" y2="280" stroke="#E94560" strokeWidth="2" strokeDasharray="8 6" />
             </svg>
           </div>
         </div>
