@@ -120,7 +120,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm text-[#1A1A2E] truncate">{tx.merchant}</p>
-                    <p className="text-[10px] md:text-xs text-gray-400 capitalize truncate">{tx.category} · {timeAgo(tx.transactionDate || tx.date)}</p>
+                    <p className="text-[10px] md:text-xs text-gray-400 capitalize truncate">{tx.category} · {timeAgo(tx.transactionDate)}</p>
                   </div>
                   <p className={`font-semibold text-xs md:text-sm shrink-0 ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatTxAmount(tx.amount)}

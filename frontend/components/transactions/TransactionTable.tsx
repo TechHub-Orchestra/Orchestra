@@ -10,7 +10,7 @@ interface Transaction {
   merchant: string
   category: string
   amount: number
-  date: string
+  transactionDate: string
   card?: string
   cardLabel?: string
   status?: string
@@ -170,7 +170,7 @@ export default function TransactionTable({ onExport }: { onExport?: (txs: Transa
                                 {t.category}
                               </span>
                               <span className="text-[10px] text-gray-400">
-                                {new Date(t.date).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                {new Date(t.transactionDate).toLocaleDateString('en-NG', { month: 'short', day: 'numeric', year: 'numeric' })}
                               </span>
                               {t.flagged && (
                                 <span className="text-[9px] px-1.5 py-0.5 bg-red-100 text-red-700 rounded-full font-bold">⚠ Flagged</span>
