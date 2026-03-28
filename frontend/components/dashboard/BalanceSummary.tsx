@@ -5,38 +5,18 @@ import { Plus, Copy, Check, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { toNaira } from '@/utils/format'
 import { fetchWithAuth } from '@/lib/fetch-utils'
-import CardWidget from '@/components/cards/CardWidget'
 import { useCurrentUser } from '@/hooks/useAuth'
-
-interface SummaryData {
-  total: number
-  active: number
-  cardCount: number
-  cards: any[]
-}
+import { useCards } from '@/hooks/useCards'
 
 export default function BalanceSummary() {
   const { data: user } = useCurrentUser()
-  const [data, setData] = useState<SummaryData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: cardsData, isLoading: loading, refetch } = useCards()
   const [copying, setCopying] = useState<string | null>(null)
 
-  const fetchData = () => {
-    setLoading(true)
-    fetchWithAuth('/api/cards')
-      .then(r => r.json())
-      .then(({ cards = [] }) => {
-        const total = cards.reduce((s: number, c: { availableBalance?: number }) => s + (c.availableBalance || 0), 0)
-        const active = cards.filter((c: { cardStatus: string }) => c.cardStatus === '1').length
-        setData({ total, active, cardCount: cards.length, cards })
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const cards = cardsData || []
+  const total = cards.reduce((s, c) => s + (c.availableBalance || 0), 0)
+  const active = cards.filter(c => c.cardStatus === '1').length
+  const cardCount = cards.length
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text)
@@ -63,9 +43,9 @@ export default function BalanceSummary() {
         <div className="relative z-10 flex justify-between items-start">
           <div>
             <p className="text-white/60 text-sm font-medium mb-1">Total Balance Across All Cards</p>
-            <p className="text-4xl md:text-5xl font-black tracking-tight">{toNaira(data?.total ?? 0)}</p>
+            <p className="text-4xl md:text-5xl font-black tracking-tight">{toNaira(total)}</p>
             <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">
-              {data?.active ?? 0} Active / {data?.cardCount ?? 0} Total Cards
+              {active} Active / {cardCount} Total Cards
             </p>
           </div>
           <Link href="/cards" className="w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all group shrink-0">
@@ -85,7 +65,7 @@ export default function BalanceSummary() {
             Connected Accounts
           </h3>
           <button 
-            onClick={fetchData}
+            onClick={() => refetch()}
             className="p-2 text-gray-400 hover:text-[#E94560] transition-colors rounded-xl hover:bg-white"
             title="Refresh Balances"
           >
@@ -94,8 +74,8 @@ export default function BalanceSummary() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-          {data?.cards && data.cards.length > 0 ? (
-            data.cards.map((card: any) => (
+          {cards.length > 0 ? (
+            cards.map((card: any) => (
               <div key={card._id} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-transparent hover:border-gray-200 transition-all group">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white border flex items-center justify-center text-[9px] font-black text-gray-400 shadow-sm shrink-0">
@@ -131,7 +111,7 @@ export default function BalanceSummary() {
         <div className="p-4 bg-gray-50/50 border-t">
           <button 
             onClick={() => {
-              const firstCard = data?.cards?.[0];
+              const firstCard = cards[0];
               if (firstCard) {
                 toast.promise(
                   fetchWithAuth(`/api/cards/${firstCard._id}/balance`).then(r => r.json()),
@@ -140,7 +120,7 @@ export default function BalanceSummary() {
                     success: 'Balances updated',
                     error: 'Sync failed'
                   }
-                ).then(() => fetchData())
+                ).then(() => refetch())
               }
             }}
             className="w-full py-2.5 rounded-xl bg-[#1A1A2E] text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#252545] transition-all flex items-center justify-center gap-2"

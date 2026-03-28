@@ -26,8 +26,8 @@ export default function DashboardPage() {
   }, [])
 
   const stats = {
-    totalCards: cardsData?.cards?.length || 0,
-    virtualCards: vcData?.virtualCards?.length || 0,
+    totalCards: cardsData?.length || 0,
+    virtualCards: vcData?.length || 0,
     monthlySpend: (summaryData?.summary?.totalSpent ?? 0) / 100,
     savedThisMonth: 0, // Placeholder for future implementation
   }
