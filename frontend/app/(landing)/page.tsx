@@ -225,13 +225,13 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 pt-24 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center w-full">
           {/* Left — copy */}
           <div>
-            <div
+            {/* <div
               className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-xs text-white/80 font-medium mb-6"
               style={{ animation: 'fadeIn 0.8s ease forwards' }}
             >
               <span className="w-2 h-2 bg-[#E94560] rounded-full animate-pulse" />
-              Interswitch × Enyata Hackathon 2025
-            </div>
+             
+            </div> */}
 
             <h1
               className="text-5xl md:text-6xl font-black text-white leading-tight mb-6"
