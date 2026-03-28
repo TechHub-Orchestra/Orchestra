@@ -14,15 +14,17 @@
 /coverage
 
 # next.js
-/.next/
-/out/
-
-# production
-/build
+.next/
+out/
+dev/
+build/
+cache/
+turbopack/
 
 # misc
 .DS_Store
 *.pem
+
 
 # debug
 npm-debug.log*

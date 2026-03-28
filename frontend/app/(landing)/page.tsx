@@ -303,14 +303,14 @@ export default function LandingPage() {
       </section>
 
       {/* ── STATS ────────────────────────────────────────── */}
-      <section id="stats" className="bg-[#16213E] py-20 border-y border-white/10">
+      {/* <section id="stats" className="bg-[#16213E] py-20 border-y border-white/10">
         <div className="max-w-4xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
           <Stat to={18} suffix="+" label="Supported banks" />
           <Stat to={99} suffix="%" label="Routing accuracy" />
           <Stat to={3} suffix="s" label="Avg routing time" />
           <Stat to={40} suffix="%" label="Fewer declined txns" />
         </div>
-      </section>
+      </section> */}
 
       {/* ── FEATURES ─────────────────────────────────────── */}
       <section id="features" className="bg-[#1A1A2E] py-24">
