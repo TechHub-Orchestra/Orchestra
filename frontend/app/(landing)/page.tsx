@@ -237,6 +237,7 @@ export default function LandingPage() {
               className="text-5xl md:text-6xl font-black text-white leading-tight mb-6"
               style={{ animation: 'slideUp 0.9s ease 0.1s both' }}
             >
+              
               One card to{' '}
               <span className="text-gradient">orchestrate</span>
               {' '}them all
