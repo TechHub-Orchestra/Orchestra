@@ -1,10 +1,17 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { getTransactions, createRoutedTransaction, getAnomalies } from '@/api/transactions';
+import { getTransactions, createRoutedTransaction, getAnomalies, getTransactionSummary } from '@/api/transactions';
 
 export const useTransactions = (params: { cardId?: string; category?: string; page?: number; limit?: number } = {}) => {
   return useQuery({
     queryKey: ['transactions', params],
     queryFn: () => getTransactions(params),
+  });
+};
+
+export const useTransactionSummary = () => {
+  return useQuery({
+    queryKey: ['transaction-summary'],
+    queryFn: getTransactionSummary,
   });
 };
 

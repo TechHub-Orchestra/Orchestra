@@ -78,7 +78,7 @@ export default function BalanceSummary() {
         </div>
       </div>
       
-      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col h-[280px] lg:h-auto">
+      <div className="bg-white rounded-3xl border shadow-sm overflow-hidden flex flex-col h-[280px]">
         <div className="p-5 border-b flex items-center justify-between bg-gray-50/50">
           <h3 className="font-bold text-[#1A1A2E] text-sm flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />

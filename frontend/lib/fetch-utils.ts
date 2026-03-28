@@ -1,6 +1,6 @@
 import { tokenStorage } from '@/utils/tokenStorage';
 
-const BASE_URL = 'https://orchestra-server.onrender.com';
+const BASE_URL = 'https://orchestra-y8vf.onrender.com';
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = tokenStorage.getToken();

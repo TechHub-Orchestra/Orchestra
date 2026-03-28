@@ -157,7 +157,7 @@ export default function TransactionTable({ onExport }: { onExport?: (txs: Transa
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             'w-10 h-10 rounded-xl flex items-center justify-center border shrink-0',
-                            t.amount >= 0 ? 'bg-green-50 border-green-100 text-green-600' : 'bg-gray-50 border-gray-100 text-[#1A1A2E]'
+                            t.amount >= 0 ? 'bg-green-50 border-green-100 text-green-600' : 'bg-red-50 border-red-100 text-red-600'
                           )}>
                             {t.amount >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownLeft size={18} />}
                           </div>

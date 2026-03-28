@@ -4,67 +4,35 @@ import BalanceSummary from '@/components/dashboard/BalanceSummary'
 import QuickStats from '@/components/dashboard/QuickStats'
 import SpendingChart from '@/components/dashboard/SpendingChart'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
-import { fetchWithAuth } from '@/lib/fetch-utils'
-import { ArrowUpRight, ArrowDownLeft, Send, Zap } from 'lucide-react'
+import { ArrowUpRight, Send, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { useCurrentUser } from '@/hooks/useAuth'
-
-interface Transaction {
-  _id: string
-  merchant: string
-  category: string
-  amount: number
-  date?: string
-  transactionDate?: string
-}
+import { useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
+import { useCards } from '@/hooks/useCards'
+import { useVirtualCards } from '@/hooks/useVirtualCards'
 
 export default function DashboardPage() {
   const { data: user } = useCurrentUser()
-  const [stats, setStats] = useState({
-    totalCards: 0,
-    virtualCards: 0,
-    monthlySpend: 0,
-    savedThisMonth: 0,
-  })
+  const { data: cardsData } = useCards()
+  const { data: vcData } = useVirtualCards()
+  const { data: summaryData } = useTransactionSummary()
+  const { data: txData, isLoading: txLoading } = useTransactions({ limit: 5 })
+
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [recentTx, setRecentTx] = useState<Transaction[]>([])
-  const [txLoading, setTxLoading] = useState(true)
 
   useEffect(() => {
     const done = localStorage.getItem('orchestra_onboarded')
     if (!done) setShowOnboarding(true)
   }, [])
 
-  useEffect(() => {
-    Promise.all([
-      fetchWithAuth('/api/cards').then(r => r.json()),
-      fetchWithAuth('/api/virtual-cards').then(r => r.json()),
-      fetchWithAuth('/api/transactions/summary').then(r => r.json()),
-      fetchWithAuth('/api/insights').then(r => r.json())
-    ])
-      .then(([cardsData, vcData, summaryData, insightsData]) => {
-        
-        setStats({
-          totalCards: Array.isArray(cardsData?.cards) ? cardsData.cards.length : 0,
-          virtualCards: Array.isArray(vcData?.virtualCards) ? vcData.virtualCards.length : (Array.isArray(vcData?.cards) ? vcData.cards.length : 0),
-          // API returns summary.totalSpent in kobo
-          monthlySpend: (summaryData?.summary?.totalSpent ?? 0) / 100, 
-          // Use insight savings if available, else 0
-          savedThisMonth: insightsData?.insights?.savingsOpportunity || 0,
-        })
-      })
-      .catch(() => {})
-  }, [])
+  const stats = {
+    totalCards: cardsData?.cards?.length || 0,
+    virtualCards: vcData?.virtualCards?.length || 0,
+    monthlySpend: (summaryData?.summary?.totalSpent ?? 0) / 100,
+    savedThisMonth: 0, // Placeholder for future implementation
+  }
 
-  useEffect(() => {
-    fetchWithAuth('/api/transactions?limit=5')
-      .then(r => r.json())
-      .then(d => {
-        setRecentTx(Array.isArray(d?.transactions) ? d.transactions : (Array.isArray(d?.data) ? d.data : []))
-        setTxLoading(false)
-      })
-      .catch(() => setTxLoading(false))
-  }, [])
+  const recentTx = txData?.transactions || []
 
   function formatTxAmount(amount: number) {
     const abs = Math.abs(amount / 100)

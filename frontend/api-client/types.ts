@@ -74,6 +74,16 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface TransactionSummary {
+  totalSpent: number;
+  transactionCount: number;
+  subscriptionSpend: number;
+  anomalyCount: number;
+  byCategory: Record<string, number>;
+  dailySpend: Record<string, number>;
+  topMerchants: [string, number][];
+}
+
 // Global Response Interface
 export interface ApiResponse<T> {
   success: boolean;

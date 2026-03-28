@@ -1,6 +1,6 @@
 import { tokenStorage } from '@/utils/tokenStorage';
 
-const BASE_URL = 'https://orchestra-server.onrender.com';
+const BASE_URL = 'https://orchestra-y8vf.onrender.com';
 
 export async function apiClient<T>(
   path: string,
